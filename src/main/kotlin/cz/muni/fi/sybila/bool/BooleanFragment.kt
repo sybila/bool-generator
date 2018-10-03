@@ -85,6 +85,7 @@ class BooleanFragment(private val model: BooleanModel) : Model<Boolean>, Solver<
                 pushResultWithoutCopy(v, 0)
             }
         }
+        if (s in result && result.size > 1) result.remove(s)
         result.toIntArray()
     }
 
