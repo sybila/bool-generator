@@ -4,48 +4,33 @@ import com.github.sybila.checker.SequentialChecker
 import com.github.sybila.huctl.*
 
 fun main(args: Array<String>) {
-    /*
-            a:1 <- b:1
-            a:2 <- b:1&c
-            b:2 <- a:2|!c
-            b:1 <- a:2&c
-            c <- c&a:2
-     */
-    val iA = 0
-    val iB = 1
-    val iC = 2
-    val model1 = BooleanModel(
-            BooleanModel.Variable("a", maxLevel = 2, levelFunctions = listOf(
-                    atLeast(iB, 1), atLeast(iB, 1) and isValue(iC, 1)
-            )),
-            BooleanModel.Variable("b", maxLevel = 2, levelFunctions = listOf(
-                    atLeast(iA, 2) and isValue(iC, 1), atLeast(iA, 2) or !isValue(iC, 1)
-            )),
-            BooleanModel.Variable("c", maxLevel = 1, levelFunctions = listOf(
-                    isValue(iC, 1) and atLeast(iA, 2)
-            ))
-    )
-
-    var xy = True
-    var xz = True
-    var yz = True
-    var sx = True
-    var sy = True
-
     val parser = BooleanModelParser()
-    var model2 = parser.readString("""
-        sx <- sx
-        sy <- sy
-        x <- sx
-        y <- x&sy
-        z <- x&y
-    """.trimIndent())
-    println("Parsed model: $model2")
 
-    // println("======= Run Model 1 =======")
-    // runExperiments(model1)
-    println("======= Run Model 2 =======")
-    runExperiments(model2)
+    /** model generator here **/
+    val types = listOf("C1","I1","I3","C3","I4","C4","C2","I2")
+    // println(types)
+    var count = 0
+    data class triple(val first:Boolean,val second:Boolean,val third:Boolean)
+    var models: HashMap< triple, Array<Int>> = hashMapOf()
+    for( xy in listOf(true,false)){
+        for( xz in listOf(true,false)){
+            for( yz in listOf(true,false)){
+                models[triple(xy, xz, yz)] = arrayOf(0,0,0)
+                for( i in listOf("|","&")){
+                    var model = parser.readString("""
+                        sx <- sx
+                        sy <- sy
+                        x <- sx
+                        y <- ${if (xy) "" else "!"}x&sy
+                        z <- ${if (xz) "" else "!"}x$i ${if (yz) "" else "!"}y
+                    """.trimIndent())
+                    println("======= Run Model ${count+1} -- ${types[count/2]} ${if (i=="&") "AND" else "OR"} =======")
+                    count++
+                    runExperiments(model)
+                }
+            }
+        }
+    }
 }
 
 fun runExperiments(model: BooleanModel) = BooleanFragment(model).run {
@@ -54,6 +39,8 @@ fun runExperiments(model: BooleanModel) = BooleanFragment(model).run {
             val zero = 0.0.asConstant()
             val one = 1.0.asConstant()
             val allZero = ("x".asVariable() eq zero) and ("y".asVariable() eq zero) and ("z".asVariable() eq zero)
+
+            /** properties are here **/
 
             println("Verify EF(x = 0 & y = 0 & z = 0)")
             val reachZero = EF(allZero)
@@ -65,20 +52,10 @@ fun runExperiments(model: BooleanModel) = BooleanFragment(model).run {
                 println(states.sizeHint)
             }
 
-            println("Verify delay_on: AU((z = 0),(y = 1))")
-            val delay_on = (("sx".asVariable() eq one) and ("sy".asVariable() eq one) and ("x".asVariable() eq zero) and ("y".asVariable() eq zero) and ("z".asVariable() eq zero) and ("z".asVariable() eq zero)AU("y".asVariable() eq one))
+            println("Verify delay_on: If(up, AU((z = 0),(y = 1)))")
+            val delay_on = ((("sx".asVariable() eq one) and ("sy".asVariable() eq one) and ("x".asVariable() eq zero) and ("y".asVariable() eq zero) and ("z".asVariable() eq zero)) and (("z".asVariable() eq zero)AU("y".asVariable() eq one)))
             SequentialChecker(this).use { checker ->
                 val states = checker.verify(delay_on)
-                for ((s, _) in states.entries()) {
-                    println(s.prettyPrint(model))
-                }
-                println(states.sizeHint)
-            }
-
-            println("Verify delay_on1: AU((z = 0),(y = 1))")
-            val delay_on1 = (("z".asVariable() eq zero)AU("y".asVariable() eq one))
-            SequentialChecker(this).use { checker ->
-                val states = checker.verify(delay_on1)
                 for ((s, _) in states.entries()) {
                     println(s.prettyPrint(model))
                 }
@@ -95,8 +72,8 @@ fun runExperiments(model: BooleanModel) = BooleanFragment(model).run {
                 println(states.sizeHint)
             }
 
-            println("Verify delay_off: AU((z = 1),(y = 0))")
-            val delay_off = ("z".asVariable() eq one)AU("y".asVariable() eq zero)
+            println("Verify delay_off: If(down, AU((z = 1),(y = 0)))")
+            val delay_off = ( (("sx".asVariable() eq zero) and ("sy".asVariable() eq one) and ("x".asVariable() eq one) and ("y".asVariable() eq one) and ("z".asVariable() eq one)) and (("z".asVariable() eq one)AU("y".asVariable() eq zero)))
             SequentialChecker(this).use { checker ->
                 val states = checker.verify(delay_off)
                 for ((s, _) in states.entries()) {
@@ -104,7 +81,6 @@ fun runExperiments(model: BooleanModel) = BooleanFragment(model).run {
                 }
                 println(states.sizeHint)
             }
-
 
             println("Verify no_delay_on AF(~(S(z=0,y=0,sx=1,sy=1) & EX(S(y=1))) | EX(S(y=1,z=1)))")
             val no_delay_on = AF(not( ("z".asVariable() eq zero) and ("y".asVariable() eq zero) and ("sx".asVariable() eq one) and ("sy".asVariable() eq one)) and EX("y".asVariable() eq one)) or EX(("y".asVariable() eq one) and ("z".asVariable() eq one))
@@ -116,6 +92,7 @@ fun runExperiments(model: BooleanModel) = BooleanFragment(model).run {
                 println(states.sizeHint)
             }
 
+            /*
             println("Reachability for sx=1, sy=1, x=0, y=1, z=1")
             val init = intArrayOf(1, 1, 0, 1, 1)
             var recompute = setOf<Int>(model.encoder.encodeState(init))
@@ -127,7 +104,6 @@ fun runExperiments(model: BooleanModel) = BooleanFragment(model).run {
                 recompute = step - discovered
                 discovered += recompute
             }
-
-
+            */
         }
 
