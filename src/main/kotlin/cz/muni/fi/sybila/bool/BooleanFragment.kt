@@ -12,7 +12,7 @@ import com.github.sybila.huctl.Expression
 import com.github.sybila.huctl.Formula
 import com.github.sybila.huctl.Formula.Atom.Float
 
-class BooleanFragment(private val model: BooleanModel) : Model<Boolean>, Solver<Boolean> by BoolSolver() {
+class BooleanFragment(val model: BooleanModel) : Model<Boolean>, Solver<Boolean> by BoolSolver() {
 
     override val stateCount: Int = model.encoder.stateCount
     private val varCount = model.variables.size
