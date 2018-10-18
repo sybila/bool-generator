@@ -9,6 +9,8 @@ class BDDSolver(
         varCount: Int
 ) : Solver<BDD> {
 
+    private val bdd = jdd.bdd.BDD(1000, 1000)
+
     override val ff: BDD
         get() = TODO("not implemented")
     override val tt: BDD

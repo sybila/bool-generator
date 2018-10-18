@@ -33,4 +33,5 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile 'com.github.sybila:ctl-model-checker:2.1.1'
     compile 'com.github.sybila:ctl-parser:2.2.3'
+    compile 'org.bitbucket.vahidi:jdd:108'
 }
