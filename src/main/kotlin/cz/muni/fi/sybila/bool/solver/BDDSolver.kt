@@ -1,16 +1,15 @@
 package cz.muni.fi.sybila.bool.solver
 
 import com.github.sybila.checker.Solver
+import cz.muni.fi.sybila.bool.BooleanSolver
 import cz.muni.fi.sybila.bool.solver.VarSetCreator.Companion.result
-import jdd.bdd.NodeTable
-import jdd.util.Allocator
 import java.nio.ByteBuffer
 
 data class BDD(val ref: Int)
 
 class BDDSolver(
         varCount: Int
-) : Solver<BDD> {
+) : BooleanSolver {
 
 
     val bdd = jdd.bdd.BDD(1000, 1000)
@@ -87,14 +86,14 @@ class BDDSolver(
     /**
      * Returns BDD which is satisfied exactly when variable [varIndex] is one, regardless of other variables.
      */
-    fun one(varIndex: Int): BDD {
+    override fun one(varIndex: Int): BDD {
         return BDD(bdd.and(1, vars[varIndex]))
     }
 
     /**
      * Returns BDD which is satisfied exactly when variable [varIndex] is zero, regardless of other variables.
      */
-    fun zero(varIndex: Int): BDD {
+    override fun zero(varIndex: Int): BDD {
         return BDD(bdd.and(1, bdd.not(vars[varIndex])))
     }
 
