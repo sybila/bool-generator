@@ -33,7 +33,7 @@ class BooleanStateSpaceGenerator(
         private val solver: BooleanSolver = BDDSolver(model.parameterCount)
 ) : Model<BDD>, BooleanSolver by solver, BooleanStateEncoder by stateEncoder, BooleanContext {
 
-    override val stateCount: Int = TODO("2^model.variableCount")
+    override val stateCount: Int = Math.pow(2.0, model.variables.size.toDouble()).toInt()
 
     // TODO: Computing transitions every time is expensive. We will want to cache the results of successor/predecessor
     // computation in some map (or array, since state IDs are continuous).
@@ -41,40 +41,59 @@ class BooleanStateSpaceGenerator(
     override fun Int.successors(timeFlow: Boolean): Iterator<Transition<BDD>> {
         // if going back in time, just return predecessors
         if (!timeFlow) return predecessors(true) else {
-            var hasTransition = tt
+            var hasTransition = ff
             val fromState = this
             val transitions = ArrayList<Transition<BDD>>()
             // For each system variable, compute the update function and compute parameters for which
             // the current variable value can be flipped (so if value is 0, use result of update function,
             // if value is 1, use complement).
-            val toState = -1
+            var i = model.variables.size - 1
 
-            // If this parameter set is not empty, create a corresponding transition:
-            val transitionParams = ff
-            if (transitionParams.isSat()) {
-                transitions.add(Transition(
-                        target = toState, bound = transitionParams,
-                        direction = DirectionFormula.Atom.Proposition(
-                                // Name of variable which is being changed
-                                name = "",
-                                // Positive/Negative facet depending on the direction of the change.
-                                // 0 -> 1 = Positive, 1 -> 0 = Negative
-                                facet = Facet.POSITIVE
-                        )
-                ))
+
+            model.variables.forEach {
+                val updateFunctionResult = it.updateFunction.invoke(this@BooleanStateSpaceGenerator, fromState)
+                val oldValue = getVarValue(i)
+
+                println(updateFunctionResult.prettyPrint())
+
+                val transitionParams = if (!oldValue) updateFunctionResult else updateFunctionResult.not()
+
+                // If this parameter set is not empty, create a corresponding transition:
+
+                if (transitionParams.isSat()) {
+
+                    val toState = fromState.setVarValue(i, oldValue.not())
+
+                    transitions.add(Transition(
+                            target = toState, bound = transitionParams,
+                            direction = DirectionFormula.Atom.Proposition(
+                                    // Name of variable which is being changed
+                                    name = it.name,
+                                    // Positive/Negative facet depending on the direction of the change.
+                                    // 0 -> 1 = Positive, 1 -> 0 = Negative
+                                    facet = if (!oldValue) Facet.POSITIVE else (Facet.NEGATIVE)
+                            )
+                    ))
+                }
+
+                i -= 1
+                hasTransition = hasTransition or transitionParams
             }
 
-            // In order to handle self-loops, keep track of parameters which have a transition:
-            hasTransition = hasTransition or transitionParams
+                // In order to handle self-loops, keep track of parameters which have a transition:
 
 
-            // At the very end, you get parameters where no transition is allowed by computing complement:
-            val hasSelfLoop = hasTransition.not()
-            if (hasSelfLoop.isSat()) {
-                val loop = Transition(target = fromState, bound = hasSelfLoop, direction = DirectionFormula.Atom.Loop)
-                transitions.add(loop)
-            }
 
+                // At the very end, you get parameters where no transition is allowed by computing complement:
+                val hasSelfLoop = hasTransition.not()
+                if (hasSelfLoop.isSat()) {
+                    val loop = Transition(
+                            target = fromState,
+                            bound = hasSelfLoop,
+                            direction = DirectionFormula.Atom.Loop)
+                    transitions.add(loop)
+
+                }
             return transitions.iterator()
         }
     }

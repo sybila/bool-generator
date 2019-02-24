@@ -54,18 +54,6 @@ class BDDSolver(
 
     override fun BDD.prettyPrint(): String {
 
-        // remove after done debugging
-        // ------------
-        /*
-        bdd.print(this.ref)
-        println("Set")
-        bdd.printSet(this.ref)
-        println("Cube")
-        bdd.printCubes(this.ref)
-        */
-        // ------------
-
-
         when {
             ref == 1 -> return "TRUE"
             ref == 0 -> return "FALSE"
@@ -143,9 +131,10 @@ class BDDSolver(
     override fun BDD.byteSize(): Int {
         return if (ref > 1) {
             val sets = VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd)
+            // we need 2 numbers for each var and 2 extra for set ending indication, for each set
             return sets.size * (2 * bdd.numberOfVariables() + 2)
         } else {
-            0
+            1
         }
     }
 
@@ -164,9 +153,8 @@ class BDDSolver(
 
         result = ArrayList<ArrayList<Char>>()
 
-
+        // count vars in one set
         var i = 0
-
         while ((this.array()[i] == 1.toByte() && this.array()[i+1] == 0.toByte()).not())
         {
             i += 2
@@ -183,15 +171,18 @@ class BDDSolver(
         var bufferBDD: BDD? = null
         while (i < this.array().size) {
             when {
+                // 11 -> var must be positive
                 this.array()[i] == 1.toByte() && this.array()[i+1] == 1.toByte() -> {
                     bufferBDD = bufferBDD?.and(one((i / 2) % varsSize)) ?: one((i / 2) % (varsSize + 1))
                 }
+                // 00 -> var must be negative
                 this.array()[i] == 0.toByte() && this.array()[i+1] == 0.toByte() -> {
                     bufferBDD = bufferBDD?.and(zero((i / 2) % varsSize)) ?: zero((i / 2) % (varsSize + 1))
                 }
+                // 10 -> end of one set, append as "or" to result and continue further
                 this.array()[i] == 1.toByte() && this.array()[i+1] == 0.toByte() -> {
-                    println("buffer")
-                    println(bufferBDD?.prettyPrint())
+                    // println("buffer")
+                    // println(bufferBDD?.prettyPrint())
                     if (bufferBDD != null && bufferBDD.ref != 1) {
                         resultBDD = BDD(resultBDD?.or(bufferBDD)?.ref ?: bufferBDD.ref)
                     }
@@ -221,11 +212,8 @@ fun main(args: Array<String>) {
         println(moreOptions.prettyPrint())
 
 
-        //println(unsat.isSat())
-
-
         val buffer = ByteBuffer.allocate(moreOptions.byteSize())
-        buffer.putColors(moreOptions).array().forEach { print(it) }
+        buffer.putColors(moreOptions)
 
         val transformedBDD = buffer.getColors()
         println(transformedBDD.prettyPrint())
