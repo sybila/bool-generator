@@ -38,9 +38,6 @@ class BooleanStateSpaceGenerator(
     val successors: MutableMap<Int, List<Transition<BDD>>> = HashMap()
     val predecessors: MutableMap<Int, List<Transition<BDD>>> = HashMap()
 
-    // TODO: Computing transitions every time is expensive. We will want to cache the results of successor/predecessor
-    // otazka na sama - vytvorit mapu int -> successors ? nutne predpocitat 2^variables stavov
-
     // computation in some map (or array, since state IDs are continuous).
 
 
@@ -136,14 +133,20 @@ class BooleanStateSpaceGenerator(
 
     override fun Int.successors(timeFlow: Boolean): Iterator<Transition<BDD>> {
         // if going back in time, just return predecessors
+        if (this >= stateCount) {
+            throw IllegalStateException("This boolean generator's model cannot achieve given state.")
+        }
+
         return if (!timeFlow) predecessors(true) else {
-            val test = this
-            successors[test]!!.iterator()
+            successors[this]!!.iterator()
         }
     }
 
     override fun Int.predecessors(timeFlow: Boolean): Iterator<Transition<BDD>> {
         // if going back in time, just return successors
+        if (this >= stateCount) {
+            throw IllegalStateException("This boolean generator's model cannot achieve given state.")
+        }
         return if (!timeFlow) successors(true) else {
             // Compute predecessors, similar to successors, but inverse logic needs to be applied.
             predecessors[this]!!.iterator()
@@ -187,7 +190,7 @@ class BooleanStateSpaceGenerator(
 
                 for (i in 0 until stateCount) {
                     if (cmp.compare(i.getVarValue(leftVarPosition), i.getVarValue(rightVarPosition))) {
-                        resultMap.set(i, tt) // alebo namiest tt BDD s hodnotou i ?
+                        resultMap.set(i, tt)
                     }
                 }
 
@@ -199,7 +202,7 @@ class BooleanStateSpaceGenerator(
                 val leftVarPosition = model.variables.indexOf(model.variables.firstOrNull { it.name == leftVar.name })
                 for (i in 0 until stateCount) {
                     if (cmp.compare(i.getVarValue(leftVarPosition), rightConst.value.roundToInt() != 0)) {
-                        resultMap.set(i, tt) // alebo namiest tt BDD s hodnotou i ?
+                        resultMap.set(i, tt)
                     }
                 }
 
@@ -211,26 +214,25 @@ class BooleanStateSpaceGenerator(
                 val leftVarPosition = model.variables.indexOf(model.variables.firstOrNull { it.name == rightVar.name })
                 for (i in 0 until stateCount) {
                     if (cmp.compare(i.getVarValue(leftVarPosition), leftConst.value.roundToInt() != 0)) {
-                        resultMap[i] = tt // alebo namiest tt BDD s hodnotou i ?
+                        resultMap[i] = tt
                     }
                 }
 
 
             }
             left is Expression.Constant && right is Expression.Constant -> {
-                var leftConst = left as Expression.Constant
-                var rightConst = right as Expression.Constant
+                val leftConst = left as Expression.Constant
+                val rightConst = right as Expression.Constant
 
                 for (i in 0 until stateCount) {
                     if (cmp.compare(leftConst.value.roundToInt() != 0, rightConst.value.roundToInt() != 0)) {
-                        resultMap[i] = tt // alebo namiest tt BDD s hodnotou i ?
+                        resultMap[i] = tt
                     }
                 }
 
             }
             else -> throw IllegalArgumentException("Unsupported expression type.")
         }
-
 
         return resultMap
     }

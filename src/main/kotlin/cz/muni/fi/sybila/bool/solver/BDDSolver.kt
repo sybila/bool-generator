@@ -5,21 +5,21 @@ import cz.muni.fi.sybila.bool.BooleanSolver
 import cz.muni.fi.sybila.bool.solver.VarSetCreator.Companion.result
 import java.nio.ByteBuffer
 
-data class BDD(val ref: Int)
+data class BDD(val ref: Int) // zamenit za inline ?
 
 class BDDSolver(
         varCount: Int
 ) : BooleanSolver {
 
 
-    val bdd = jdd.bdd.BDD(1000, 1000)
+    private val bdd = jdd.bdd.BDD(1000, 1000)
     val vars = ArrayList<Int>()
 
     // bdd.ref() only increases refferences to prevent accidental garbage collection
     // TODO: implement dereffing?
 
     init {
-        for (i in 0..varCount) {
+        for (i in 0 until varCount) {
             val bddVar = bdd.createVar()
             vars.add(bddVar)
             bdd.ref(bddVar)
@@ -54,21 +54,16 @@ class BDDSolver(
 
     override fun BDD.prettyPrint(): String {
 
-        when {
-            ref == 1 -> return "TRUE"
-            ref == 0 -> return "FALSE"
+        return when (ref) {
+            1 -> "TRUE"
+            0 -> "FALSE"
             else -> {
-                val sets = VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd)
-                return sets
-                        .map { resultSet ->
-                            resultSet.fold(StringBuilder(), { builder, char -> builder.append(char) }).toString() }
-                        .fold(StringBuilder(), { builder, row -> builder.append(row).append("\n") }).toString()
+                VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd)
+                        .joinToString("\n") { resultSet ->
+                            resultSet.fold(StringBuilder()) { builder, char -> builder.append(char) }.toString() }
             }
         }
 
-    }
-
-    private fun getVarSet() {
     }
 
     /**
@@ -189,9 +184,7 @@ class BDDSolver(
                     bufferBDD = null
                 }
             }
-
             i += 2
-
         }
 
         return resultBDD ?: BDD(1)
@@ -201,8 +194,16 @@ class BDDSolver(
 }
 
 fun main(args: Array<String>) {
+
+    val test = BDDSolver(1)
+    test.run {
+        val a = one(0)
+        println(a.prettyPrint())
+    }
+
     val solver = BDDSolver(10)
 
+    println("__________")
     solver.run {
 
         val moreOptionsA = one(1).and(zero(3)).and(one(5))
@@ -211,6 +212,7 @@ fun main(args: Array<String>) {
 
         println(moreOptions.prettyPrint())
 
+        println("___________")
 
         val buffer = ByteBuffer.allocate(moreOptions.byteSize())
         buffer.putColors(moreOptions)
