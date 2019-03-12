@@ -2,7 +2,6 @@ package cz.muni.fi.sybila.bool.solver
 
 import com.github.sybila.checker.Solver
 import cz.muni.fi.sybila.bool.BooleanSolver
-import cz.muni.fi.sybila.bool.solver.VarSetCreator.Companion.result
 import java.nio.ByteBuffer
 
 data class BDD(val ref: Int) // zamenit za inline ?
@@ -53,14 +52,14 @@ class BDDSolver(
     }
 
     override fun BDD.prettyPrint(): String {
-
         return when (ref) {
             1 -> "TRUE"
             0 -> "FALSE"
             else -> {
                 VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd)
                         .joinToString("\n") { resultSet ->
-                            resultSet.fold(StringBuilder()) { builder, char -> builder.append(char) }.toString() }
+                            resultSet.fold(StringBuilder()) { builder, char -> builder.append(char) }.toString()
+                        }
             }
         }
 
@@ -84,7 +83,6 @@ class BDDSolver(
 
     override fun BDD.transferTo(solver: Solver<BDD>): BDD {
         // z tohto solveru do druheho, ak naopak tak treba vymenit
-
         val buffer = ByteBuffer.allocate(this.byteSize()).putColors(this)
         solver.run {
             return buffer.getColors()
@@ -94,33 +92,32 @@ class BDDSolver(
     override fun ByteBuffer.putColors(colors: BDD): ByteBuffer {
         val sets = VarSetCreator.getVarSets(colors.ref, bdd.numberOfVariables(), bdd)
 
-        sets.forEach { set ->
-            run {
-                set.forEach { char -> when {
-                    char == '0' -> {
+        sets.forEach {
+            it.forEach { char ->
+                when (char) {
+                    '0' -> {
                         this.put(0)
                         this.put(0)
                     }
-                    char == '1' -> {
+                    '1' -> {
                         this.put(1)
                         this.put(1)
                     }
-                    char == '-' -> {
+                    '-' -> {
                         this.put(0)
                         this.put(1)
                     }
                     else -> {
                         throw IllegalStateException("Unknown char in set.")
                     }
-                }}
-                this.put(1)
-                this.put(0)
+                }
             }
+            this.put(1)
+            this.put(0)
         }
 
         return this
     }
-
 
 
     override fun BDD.byteSize(): Int {
@@ -146,12 +143,11 @@ class BDDSolver(
         }
 
 
-        result = ArrayList<ArrayList<Char>>()
+        // wtf toto tu asi nema byt result = ArrayList<ArrayList<Char>>()
 
         // count vars in one set
         var i = 0
-        while ((this.array()[i] == 1.toByte() && this.array()[i+1] == 0.toByte()).not())
-        {
+        while ((this.array()[i] == 1.toByte() && this.array()[i + 1] == 0.toByte()).not()) {
             i += 2
         }
 
@@ -167,15 +163,15 @@ class BDDSolver(
         while (i < this.array().size) {
             when {
                 // 11 -> var must be positive
-                this.array()[i] == 1.toByte() && this.array()[i+1] == 1.toByte() -> {
+                this.array()[i] == 1.toByte() && this.array()[i + 1] == 1.toByte() -> {
                     bufferBDD = bufferBDD?.and(one((i / 2) % varsSize)) ?: one((i / 2) % (varsSize + 1))
                 }
                 // 00 -> var must be negative
-                this.array()[i] == 0.toByte() && this.array()[i+1] == 0.toByte() -> {
+                this.array()[i] == 0.toByte() && this.array()[i + 1] == 0.toByte() -> {
                     bufferBDD = bufferBDD?.and(zero((i / 2) % varsSize)) ?: zero((i / 2) % (varsSize + 1))
                 }
                 // 10 -> end of one set, append as "or" to result and continue further
-                this.array()[i] == 1.toByte() && this.array()[i+1] == 0.toByte() -> {
+                this.array()[i] == 1.toByte() && this.array()[i + 1] == 0.toByte() -> {
                     // println("buffer")
                     // println(bufferBDD?.prettyPrint())
                     if (bufferBDD != null && bufferBDD.ref != 1) {
@@ -194,6 +190,8 @@ class BDDSolver(
 }
 
 fun main(args: Array<String>) {
+
+    // for testing purposes only
 
     val test = BDDSolver(1)
     test.run {
