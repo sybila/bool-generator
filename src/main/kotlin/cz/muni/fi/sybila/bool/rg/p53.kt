@@ -1,5 +1,7 @@
 package cz.muni.fi.sybila.bool.rg
 
+import com.sun.javafx.tools.packager.Param
+
 typealias SCC = Set<Int>
 
 data class State(
@@ -182,11 +184,10 @@ fun main() {
 
     val fenotypes = mutableSetOf<Set<SCC>>()
 
-    /*p53Parametrisations.forEach { p53 ->
+    p53Parametrisations.forEach { p53 ->
         DNAParametrisations.forEach { DNA ->
             Mdm2cytParametrisations.forEach { Mdm2cyt ->
-                //Mdm2nucParametrisations.forEach { Mdm2nuc ->
-                val Mdm2nuc = Mdm2nucUpdateFunction(listOf(1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1))
+                Mdm2nucParametrisations.forEach { Mdm2nuc ->
                     val edges = mutableListOf<Pair<Int, Int>>()
                     for (i in stateSpace.indices) {
                         edges += i.transition(p53)
@@ -200,8 +201,18 @@ fun main() {
                     val tscc = graph.tscc(stateSpace.indices.toSet())
                     val sizes = tscc.map { it.size }
                     fenotypes.add(tscc)
-                    println(sizes)
-                    println(tscc.map { graph.probablyCycle(it) })
+                    //println(sizes)
+                    //println(tscc.map { graph.probablyCycle(it) })
+                    val clazz = when {
+                        sizes == listOf(1) -> "1-stable"
+                        sizes == listOf(1,1) -> "2-stable"
+                        sizes == listOf(1,1,1) -> "3-stable"
+                        sizes == listOf(1,1,1,1) -> "4-stable"
+                        tscc.map { graph.probablyCycle(it) } == listOf(true) -> "cycle"
+                        sizes.size == 1 -> "chaos"
+                        else -> error("Unknown class: $sizes")
+                    }
+                    println("$clazz, ${attributes(p53.parametrisation, DNA.parametrisation, Mdm2cyt.parametrisation, Mdm2nuc.parametrisation)}")
                     /*if (sizes == listOf(1)) {
                         println("Size: $sizes")
                         println("p53: ${p53.parametrisation}")
@@ -214,12 +225,12 @@ fun main() {
                             println("${stateSpace[it]} -> ${graph.run { setOf(it).next() }.map { stateSpace[it] }}")
                         }*/
                     }*/
-                //}
+                }
             }
         }
-    }*/
+    }
 
-    val p53 = P53UpdateFunction(listOf(2,1))
+    /*val p53 = P53UpdateFunction(listOf(2,1))
     val DNA = DNAdamUpdateFunction(listOf(1,1,0,1,1,1))
     val Mdm2cyt = Mdm2cytUpdateFunction(listOf(1, 1, 2))
     val Mdm2nuc = Mdm2nucUpdateFunction(listOf(1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1))
@@ -247,7 +258,32 @@ fun main() {
 
     fenotypes.forEach {
         println(it.map { scc -> scc.map { stateSpace[it] } })
+    }*/
+}
+
+var printLabels = true
+
+fun attributes(p53: Parametrisation, DNA: Parametrisation, Mdm2cyt: Parametrisation, Mdm2nuc: Parametrisation): List<Int> {
+    val primaryAttributes = p53 + DNA + Mdm2cyt + Mdm2nuc
+    val labels = primaryAttributes.indices.map { "p${it+1}" }.toMutableList()
+    val secondaryAttributes = ArrayList<Int>()
+    for (i in primaryAttributes.indices) {
+        for (j in (i+1 until primaryAttributes.size)) {
+            secondaryAttributes.add(if (primaryAttributes[i] == primaryAttributes[j]) 1 else 0)
+            labels.add("${labels[i]} == ${labels[j]}")
+        }
     }
+    for (i in primaryAttributes.indices) {
+        for (j in primaryAttributes.indices) {
+            secondaryAttributes.add(if (primaryAttributes[i] > primaryAttributes[j]) 1 else 0)
+            labels.add("${labels[i]} > ${labels[j]}")
+        }
+    }
+    if (printLabels) {
+        println(labels)
+        printLabels = false
+    }
+    return primaryAttributes + secondaryAttributes
 }
 
 fun Graph.probablyCycle(scc: SCC): Boolean {
