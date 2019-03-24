@@ -107,44 +107,47 @@ class BooleanStateSpaceGeneratorTest {
 
         val brokenModel = BooleanModel(0,
                 BooleanModel.Variable("a") { s ->
+                    val a = s.getVarValue(0)
+                    val b = s.getVarValue(1)
+                    val c = s.getVarValue(2)
+                    val d = s.getVarValue(3)
                     when {
-                        s.getVarValue(0).not() &&
-                                s.getVarValue(1) &&
-                                s.getVarValue(3).not() &&
-                                s.getVarValue(4).not() -> tt
-                        s.getVarValue(0) &&
-                                s.getVarValue(3).not() &&
-                                s.getVarValue(4).not() -> tt
+                        !a && b && !c && !d -> tt
+                        a && !c && !d -> tt
                         else -> ff
                     }
                 },
                 BooleanModel.Variable("b") { s ->
-                    if (s.getVarValue(0).not() && s.getVarValue(2)) tt
+                    val a = s.getVarValue(0)
+                    val c = s.getVarValue(2)
+
+                    if (a.not() && c) tt
                     else ff
                 },
 
                 BooleanModel.Variable("c") { s ->
-                    if (
-                            s.getVarValue(0) &&
-                            s.getVarValue(1).not() &&
-                            s.getVarValue(2).not() &&
-                            s.getVarValue(3)
-                    ) tt
+                    val a = s.getVarValue(0)
+                    val b = s.getVarValue(1)
+                    val c = s.getVarValue(2)
+                    val d = s.getVarValue(3)
+
+                    if (a && !b && !c && d) tt
                     else ff
                 },
                 BooleanModel.Variable("d") { s ->
-                    if (
-                            s.getVarValue(0) &&
-                            s.getVarValue(3).not() &&
-                            s.getVarValue(4).not())
-                        tt
+                    val a = s.getVarValue(0)
+                    val d = s.getVarValue(3)
+                    val e = s.getVarValue(4)
+
+                    if (a && !d && !e) tt
                     else ff
                 },
 
                 BooleanModel.Variable("e") { s ->
-                    if (
-                            s.getVarValue(0) &&
-                            s.getVarValue(2).not()) tt
+                    val a = s.getVarValue(0)
+                    val c = s.getVarValue(2)
+
+                    if (a && !c) tt
                     else ff
                 }
 
@@ -152,6 +155,7 @@ class BooleanStateSpaceGeneratorTest {
         /*
 
             a :=
+              case
               case
                 (a = 0) & (b = 1) & (d = 0) & (e = 0) : 1;
                 (a = 1) & (d = 0) & (e = 0) : 1;
@@ -208,6 +212,86 @@ class BooleanStateSpaceGeneratorTest {
                     Transition(0b10001, DirectionFormula.Atom.Proposition("e", Facet.POSITIVE), tt),
                     Transition(0b01001, DirectionFormula.Atom.Proposition("d", Facet.POSITIVE), tt)
             ), 0b00001.successors(true).asSequence().toSet())
+
+
+            // rozsirit
+        }
+
+    }
+
+    @Test
+    fun `six parameters and two vars Test`() {
+
+        /*
+            x | y | x'       |   y'  |
+            1 | 1 | p0       |   0   |
+            1 | 0 | p1 or p2 |  !p3  |
+            0 | 1 | 1        |   p4  |
+            0 | 0 | p5       |   p5  |
+
+         */
+        // vracia mnozinu parametrov
+
+        val model = BooleanModel(6,
+                BooleanModel.Variable("x") { s ->
+                    val x = s.getVarValue(0)
+                    val y = s.getVarValue(1)
+
+                    when {
+                        x and y -> one(0)
+                        x and !y -> one(1).or(one(2))
+                        !x and y -> tt
+                        !x and !y -> one(5)
+                        else -> throw IllegalStateException("This shoudln't be possible.")
+                    }
+                },
+                BooleanModel.Variable("y") { s ->
+                    val x = s.getVarValue(0)
+                    val y = s.getVarValue(1)
+
+                    when {
+                        x and y -> ff
+                        x and !y -> zero(3)
+                        !x and y -> one(4)
+                        !x and !y -> one(5)
+                        else -> throw IllegalStateException("This shoudln't be possible.")
+                    }
+                }
+        )
+
+        BooleanStateSpaceGenerator(model).apply {
+
+
+            // 11 -!p0-> 10, 11 -> 01
+            assertEquals(setOf(
+                    Transition(0b10, DirectionFormula.Atom.Proposition("x", Facet.NEGATIVE), zero(0)),
+                    Transition(0b01, DirectionFormula.Atom.Proposition("y", Facet.NEGATIVE), tt)),
+                    0b11.successors(true).asSequence().toSet())
+            
+            // 01 -!(p1 or p2)-> 00, 01 -!p3-> 11
+            assertEquals(setOf(
+                    Transition(0b00, DirectionFormula.Atom.Proposition("x", Facet.NEGATIVE), zero(1) and zero(2)),
+                    Transition(0b11, DirectionFormula.Atom.Proposition("y", Facet.POSITIVE), zero(3)),
+                    Transition(0b01, DirectionFormula.Atom.Loop, (one(1) or one(2)) and one(3))),
+                    0b01.successors(true).asSequence().toSet())
+
+
+
+            // 10 -> 11, 10 -!p4>  00
+            assertEquals(setOf(
+                    Transition(0b11, DirectionFormula.Atom.Proposition("x", Facet.POSITIVE), tt),
+                    Transition(0b00, DirectionFormula.Atom.Proposition("y", Facet.NEGATIVE), zero(4))),
+                    0b10.successors(true).asSequence().toSet())
+
+
+
+            // 00 -p5-> 10, 00 -p5-> 01, 00->!p-> 00
+            assertEquals(setOf(
+                    Transition(0b01, DirectionFormula.Atom.Proposition("x", Facet.POSITIVE), one(5)),
+                    Transition(0b10, DirectionFormula.Atom.Proposition("y", Facet.POSITIVE), one(5)),
+                    Transition(0b00, DirectionFormula.Atom.Loop, zero(5))
+            ),
+                    0b00.successors(true).asSequence().toSet())
         }
     }
 
