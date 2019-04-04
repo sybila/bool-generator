@@ -12,12 +12,12 @@ import kotlin.math.roundToInt
 
 /**
  * State space generator creates a parametrised transition system based on the given [model] (a boolean network
- * with parametrised update functions). Each transition has an associated parameter set and direction formula.
+ * with parametrised union functions). Each transition has an associated parameter set and direction formula.
  * The parameter set indicates for which parameters the transition is enabled, whereas the direction formula
  * indicates which variable is updated by the transition.
  *
- * The generator implements an asynchronous update scheme, meaning that in every step, at most one variable
- * can change and the choice of updated variable is non-deterministic. For parameters where update functions
+ * The generator implements an asynchronous union scheme, meaning that in every step, at most one variable
+ * can change and the choice of updated variable is non-deterministic. For parameters where union functions
  * for all variables do not change the current state, a self-loop should be created.
  *
  * The generator also provides logical proposition evaluation. Here, transition propositions are currently
@@ -54,8 +54,8 @@ class BooleanStateSpaceGenerator(
         var hasTransition = ff
         val fromState = this
         val transitions = ArrayList<Transition<BDD>>()
-        // For each system variable, compute the update function and compute parameters for which
-        // the current variable value can be flipped (so if value is 0, use result of update function,
+        // For each system variable, compute the union function and compute parameters for which
+        // the current variable value can be flipped (so if value is 0, use result of union function,
         // if value is 1, use complement).
 
         model.variables.forEachIndexed { index, variable ->

@@ -19,16 +19,16 @@ class BooleanStateEncoder(
      *
      * (1101, 2) -> 1001
      */
-    fun flipValue(state: Int, dimension: Int): Int = state.xor(1.shl(dimension))
+    fun flipValue(state: State, dimension: Dimension): State = state.xor(1.shl(dimension))
 
     /**
      * Check the bit of specific [dimension]
      */
-    fun isActive(state: Int, dimension: Int): Boolean = state.shr(dimension).and(1) == 1
+    fun isActive(state: State, dimension: Dimension): Boolean = state.shr(dimension).and(1) == 1
 
     /**
      * Return a 1/0 array corresponding to the bits in our state.
      */
-    fun decode(state: Int): IntArray = IntArray(dimensions) { dim -> state.shr(dim).and(1) }
+    fun decode(state: State): IntArray = IntArray(dimensions) { dim -> state.shr(dim).and(1) }
 
 }

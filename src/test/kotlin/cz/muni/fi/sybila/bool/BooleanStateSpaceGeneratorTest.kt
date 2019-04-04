@@ -10,7 +10,7 @@ class BooleanStateSpaceGeneratorTest {
 
     @Test
     fun noParametersTwoVarTest() {
-        // A very simple boolean network with two variables, no parameters and following update functions:
+        // A very simple boolean network with two variables, no parameters and following union functions:
         // x' = x and y
         // y' = x xor y
         val model = BooleanModel(0,
@@ -51,7 +51,7 @@ class BooleanStateSpaceGeneratorTest {
 
     @Test
     fun oneParamTwoVarTest() {
-        // A very simple boolean network with two variables, one parameters and following update functions:
+        // A very simple boolean network with two variables, one parameters and following union functions:
         // x' = x and y
         // y' = x (p => or, !p => xor) y (or and xor differ by exactly one truth value
 
@@ -63,7 +63,7 @@ class BooleanStateSpaceGeneratorTest {
                     val x = s.getVarValue(0)
                     val y = s.getVarValue(1)
                     if (x && y) {
-                        one(0)  // update is one if parameter is one
+                        one(0)  // union is one if parameter is one
                     } else {
                         // otherwise run either function (or/xor)
                         val update = x or y
@@ -101,7 +101,7 @@ class BooleanStateSpaceGeneratorTest {
 
     @Test
     fun noParameterMultipleVarsTest() {
-        // A very simple boolean network with two variables, one parameters and following update functions:
+        // A very simple boolean network with two variables, one parameters and following union functions:
         // x' = x and y
         // y' = x (p => or, !p => xor) y (or and xor differ by exactly one truth value
 

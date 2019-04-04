@@ -1,13 +1,13 @@
 package cz.muni.fi.sybila.bool
 
 /**
- * Boolean model is a data class which represents a boolean network with parametrised update functions.
+ * Boolean model is a data class which represents a boolean network with parametrised union functions.
  *
  * The network consists of boolean [variables], where each variable has a name (this name should be
- * used in logical propositions when referring to a variable) and parametrised update function.
+ * used in logical propositions when referring to a variable) and parametrised union function.
  *
  * The network contains of [parameterCount] unnamed parameters (to refer to parameters,
- * use indices in [0..parameterCount). The update functions for each variable assume presence of
+ * use indices in [0..parameterCount). The union functions for each variable assume presence of
  * (at least) these parameters.
  */
 data class BooleanModel(

@@ -52,22 +52,22 @@ class BooleanParamEncoder(
     val parameterCount = tableSizes.sum()
 
     /**
-     * Compute the index of the parameter which determines the value of [target] specie
+     * Compute the index of the parameter which determines the value of [dimension] specie
      * given the current values of regulators specified in [state].
      */
-    fun transitionParameter(state: Int, target: Int): Int {
-        val tableRow = descendingContexts[target].fold(0) { index, regulation ->
+    fun transitionParameter(state: State, dimension: Dimension): Parameter {
+        val tableRow = descendingContexts[dimension].fold(0) { index, regulation ->
             val regulator = regulation.regulator
             index.shl(1) + state.shr(regulator).and(1)
         }
-        return tableRow + tableCoefficients[target]
+        return tableRow + tableCoefficients[dimension]
     }
 
     /**
      * Return the pairs of parameter indices which correspond to on/off table rows
      * of [target] species with respect to the [regulator] specie.
      */
-    fun regulationPairs(regulator: Int, target: Int): Iterable<Pair<Int, Int>> {
+    fun regulationPairs(regulator: Specie, target: Specie): Iterable<Pair<Parameter, Parameter>> {
         val descContext = descendingContexts[target]
         val descRegulatorIndex = descContext.indexOfFirst { it.regulator == regulator }
         if (descRegulatorIndex == -1) error("Regulation ($regulator, $target) not present!")
