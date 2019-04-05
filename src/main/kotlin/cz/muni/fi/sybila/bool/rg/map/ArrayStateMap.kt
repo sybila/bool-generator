@@ -27,11 +27,18 @@ class ArrayStateMap(
     fun union(state: State, value: BDDSet): Boolean {
         solver.run {
             if (value.isEmpty()) return false   // skip adding empty sets so that we keep nulls
-            val current = get(state)
-            return if ((value and current.not()).isEmpty()) false else {
-                if (data[state] == null) size += 1  // update size if first inserting!
-                data[state] = current or value
-                true
+            val current = data[state]
+            return when {
+                current == null -> {
+                    data[state] = value
+                    size += 1 // update size if first inserting!
+                    true
+                }
+                value subset current -> false
+                else -> {
+                    data[state] = current or value
+                    true
+                }
             }
         }
     }

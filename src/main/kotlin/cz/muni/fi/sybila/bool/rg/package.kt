@@ -15,3 +15,16 @@ typealias Dimension = Int
 typealias Specie = Int
 
 typealias StateMap = ArrayStateMap
+
+inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
+    val result = ArrayList<T>(this.size + 1)
+    var i = 0
+    while (i+1 < size) {
+        result.add(merge(this[i], this[i+1]))
+        i += 2
+    }
+    if (size % 2 == 1) {
+        result.add(this.last())
+    }
+    return result
+}

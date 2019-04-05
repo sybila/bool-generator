@@ -1,6 +1,7 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
+import jdd.util.Configuration
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -13,23 +14,32 @@ class ColouredGraph(
     private val states = BooleanStateEncoder(network)
     private val dimensions = states.dimensions
 
-    val stateCount = states.stateCount
+    private val stateCount = states.stateCount
 
-    fun newMap(): StateMap = StateMap(stateCount, solver)
+    private fun newMap(): StateMap = StateMap(stateCount, solver)
 
-    fun StateMap.reachForward(guard: StateMap? = null): StateMap {
+    private fun StateMap.reachForward(guard: StateMap? = null): StateMap {
         val shouldUpdate = BitSet(stateCount)
         val result = newMap()
         // init reach
         for (s in 0 until stateCount) {
-            result.union(s, this.get(s))
-            shouldUpdate.set(s)
+            val c = this.getOrNull(s)
+            if (c != null) {
+                result.union(s, this.get(s))
+                shouldUpdate.set(s)
+            }
         }
         // repeat
-        var updates = 0
         while (!shouldUpdate.isEmpty) {
+            println("Should update: ${shouldUpdate.cardinality()}")
             var state = shouldUpdate.nextSetBit(0)
+            var i = 0
             while (state > -1) {
+                i += 1
+                if (i % 20 == 0) {
+                    println("Remaining: ${shouldUpdate.cardinality()} (Mem: ${solver.memory()/1_000_000}MB)")
+                    solver
+                }
                 // go through all neighbours
                 for (d in 0 until dimensions) {
                     solver.run {
@@ -42,7 +52,6 @@ class ColouredGraph(
                         // update target -> if changed, mark it as working
                         val changed = result.union(target, edgeParams and bound)
                         if (changed) {
-                            updates += 1
                             shouldUpdate.set(target)
                         }
                     }
@@ -54,22 +63,23 @@ class ColouredGraph(
             }
         }
 
-        println("Updates (fwd): $updates")
-
         return result
     }
 
-    fun StateMap.reachBackward(guard: StateMap? = null): StateMap {
+    private fun StateMap.reachBackward(guard: StateMap? = null): StateMap {
         val shouldUpdate = BitSet(stateCount)
         val result = newMap()
         // init reach
         for (s in 0 until stateCount) {
-            result.union(s, this.get(s))
-            shouldUpdate.set(s)
+            val c = this.getOrNull(s)
+            if (c != null) {
+                result.union(s, this.get(s))
+                shouldUpdate.set(s)
+            }
         }
         // repeat
-        var updates = 0
         while (!shouldUpdate.isEmpty) {
+            println("Should update: ${shouldUpdate.cardinality()}")
             var state = shouldUpdate.nextSetBit(0)
             while (state > -1) {
                 // go through all neighbours
@@ -85,7 +95,6 @@ class ColouredGraph(
                         val changed = result.union(source, edgeParams and bound)
                         if (changed) {
                             shouldUpdate.set(source)
-                            updates += 1
                         }
                     }
                 }
@@ -96,11 +105,10 @@ class ColouredGraph(
             }
         }
 
-        println("Updates (bwd): $updates")
         return result
     }
 
-    fun StateMap.subtract(that: StateMap): StateMap {
+    private fun StateMap.subtract(that: StateMap): StateMap {
         val result = newMap()
         for (s in 0 until stateCount) {
             val a = this.get(s)
@@ -111,7 +119,7 @@ class ColouredGraph(
         return result
     }
 
-    fun StateMap.invert(): StateMap {
+    private fun StateMap.invert(): StateMap {
         val result = newMap()
         for (s in 0 until stateCount) {
             val c = this.get(s)
@@ -124,12 +132,11 @@ class ColouredGraph(
     fun findComponents(onComponents: (StateMap) -> Unit) = solver.run {
         // First, detect all sinks - this will prune A LOT of state space...
         val sinks = newMap()
+        /*println("Detecting sinks!")
         for (s in 0 until stateCount) {
-            var hasNext = solver.empty
-            for (d in 0 until dimensions) {
-                val edgeParams = solver.transitionParams(s, d)
-                hasNext = hasNext or edgeParams
-            }
+            val hasNext = (0 until dimensions)
+                    .map { d -> solver.transitionParams(s, d) }
+                    .merge { a, b -> a or b }
             val isSink = hasNext.not()
             if (isSink.isNotEmpty()) {
                 sinks.union(s, isSink)
@@ -138,7 +145,8 @@ class ColouredGraph(
                 onComponents(map)
             }
         }
-        val canReachSink = sinks.reachBackward()
+        val canReachSink = sinks.reachBackward()*/
+        val canReachSink = newMap()
         val workQueue = ArrayList<StateMap>()
         val groundZero = canReachSink.invert().trim()
         if (groundZero.size > 0) workQueue.add(groundZero)
@@ -148,7 +156,7 @@ class ColouredGraph(
             val pivots = findPivots(universe)
             println("Pivots state count: ${pivots.size}")
 
-            // Find universe of terminal components reachable from pivot (and the compontent containing pivot)
+            // Find universe of terminal components reachable from pivot (and the component containing pivot)
             val forward = pivots.reachForward(universe)
             val currentComponent = pivots.reachBackward(forward)
             val reachableTerminalComponents = forward.subtract(currentComponent)

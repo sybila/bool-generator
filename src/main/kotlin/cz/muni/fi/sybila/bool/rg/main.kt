@@ -12,10 +12,11 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.BuddingYeast2008
+    val network = Network.FissionYeast2008
 
     val states = BooleanStateEncoder(network)
     val solver = BDDSolver(network)
+    println("Solver ready!")
     val graph = ColouredGraph(network, solver)
 
     val start = System.currentTimeMillis()
@@ -30,5 +31,6 @@ fun main() {
 
     val elapsed = (((System.currentTimeMillis() - start) / 1000.0) * 100).toInt() / 100.0
     println("Elapsed: ${elapsed}s")
+    println("Ops: ${solver.BDDops}")
 
 }
