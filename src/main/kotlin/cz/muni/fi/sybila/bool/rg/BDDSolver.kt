@@ -1,5 +1,6 @@
 package cz.muni.fi.sybila.bool.rg
 
+import cz.muni.fi.sybila.bool.rg.bdd.BDDWorker
 import jdd.bdd.BDD
 import jdd.util.Configuration
 
@@ -14,25 +15,21 @@ class BDDSolver(
     var BDDops = 0
         private set
 
-    private val universe = BDD(100_000_000, 10_000_000)
     private val params = BooleanParamEncoder(network)
     private val states = BooleanStateEncoder(network)
 
-    /* Maps our parameter indices to BDD sets. */
-    private val parameterVarNames = Array(params.parameterCount) { BDDSet(universe.createVar(), universe) }
-    private val parameterNotVarNames = Array(params.parameterCount) { i -> parameterVarNames[i].uNot() }
+    private val universe = BDDWorker(params.parameterCount)
 
-    private val zero = BDDSet(0, universe)
-    private val one = BDDSet(1, universe)
+            /* Maps our parameter indices to BDD sets. */
+    private val parameterVarNames = Array(params.parameterCount) { universe.variable(it) }
+    private val parameterNotVarNames = Array(params.parameterCount) { universe.notVariable(it) }
 
-    val empty: BDDSet = zero
+    val empty: BDDSet = universe.zero
     val unit: BDDSet = run {
-        var result = one
+        var result = universe.one
         println("Num. parameters: ${params.parameterCount}")
         // Compute the "unit" BDD of valid parameters:
-        var i = 0
         for (r in network.regulations) {
-            System.gc()
             val pairs = params.regulationPairs(r.regulator, r.target).map { (off, on) ->
                 parameterVarNames[off] to parameterVarNames[on]
             }
@@ -49,7 +46,7 @@ class BDDSolver(
                 result = result uAnd constraint
             }
         }
-        println("Unit BDD cardinality: ${result.cardinality()}")
+        println("Unit BDD size: ${result.nodeSize()} and cardinality ${result.cardinality()}")
         result
     }
 
@@ -62,38 +59,38 @@ class BDDSolver(
     }
 
     // unsafe operations are needed to compute unit BDD
-    private infix fun BDDSet.uAnd(that: BDDSet): BDDSet = BDDSet(universe.and(this.pointer, that.pointer), universe)
-    private infix fun BDDSet.uImp(that: BDDSet): BDDSet = BDDSet(universe.imp(this.pointer, that.pointer), universe)
-    private infix fun BDDSet.uBiImp(that: BDDSet): BDDSet = BDDSet(universe.biimp(this.pointer, that.pointer), universe)
-    private fun BDDSet.uNot(): BDDSet = BDDSet(universe.not(this.pointer), universe)
+    private infix fun BDDSet.uAnd(that: BDDSet): BDDSet = universe.and(this, that)
+    private infix fun BDDSet.uImp(that: BDDSet): BDDSet = universe.imp(this, that)
+    private infix fun BDDSet.uBiImp(that: BDDSet): BDDSet = universe.biImp(this, that)
+    private fun BDDSet.uNot(): BDDSet = universe.not(this)
 
     infix fun BDDSet.subset(that: BDDSet): Boolean {
         BDDops += 1
-        val implication = universe.imp(this.pointer, that.pointer)
-        return implication == one.pointer
+        val implication = universe.imp(this, that)
+        return universe.isUnit(implication)
     }
 
     infix fun BDDSet.or(that: BDDSet): BDDSet {
         BDDops += 1
-        return BDDSet(universe.or(this.pointer, that.pointer), universe)
+        return universe.or(this, that)
     }
     infix fun BDDSet.and(that: BDDSet): BDDSet {
         BDDops += 1
-        return BDDSet(universe.and(this.pointer, that.pointer), universe)
+        return this uAnd that
     }
 
     fun BDDSet.not(): BDDSet {
         BDDops += 1
-        return BDDSet(universe.not(this.pointer), universe) and unit
+        return this.uNot() and unit
     }
 
-    fun BDDSet.isEmpty(): Boolean = pointer == 0
-    fun BDDSet.isNotEmpty(): Boolean = pointer != 0
+    fun BDDSet.isEmpty(): Boolean = universe.isEmpty(this)
+    fun BDDSet.isNotEmpty(): Boolean = !universe.isEmpty(this)
 
-    fun BDDSet.cardinality(): Double = universe.satCount(pointer)
-    fun BDDSet.nodeSize(): Int = universe.nodeCount(pointer)
-    fun BDDSet.print() = universe.printSet(pointer)
-    fun memory() = universe.memoryUsage
+    fun BDDSet.cardinality(): Double = universe.satCount(this)
+    fun BDDSet.nodeSize(): Int = universe.nodeCount(this)
+    //fun BDDSet.print() = universe.printSet(pointer)
+    //fun memory() = universe.memoryUsage
 
     fun transitionParams(from: State, dimension: Dimension): BDDSet {
         val isActive = states.isActive(from, dimension)

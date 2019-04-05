@@ -1,5 +1,6 @@
 package cz.muni.fi.sybila.bool.rg
 
+import cz.muni.fi.sybila.bool.rg.bdd.BDD
 import cz.muni.fi.sybila.bool.rg.map.ArrayStateMap
 
 // The bit vector of values in the state
@@ -15,6 +16,8 @@ typealias Dimension = Int
 typealias Specie = Int
 
 typealias StateMap = ArrayStateMap
+
+typealias BDDSet = BDD
 
 inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
     val result = ArrayList<T>(this.size + 1)

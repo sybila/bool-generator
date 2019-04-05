@@ -37,7 +37,7 @@ class ColouredGraph(
             while (state > -1) {
                 i += 1
                 if (i % 20 == 0) {
-                    println("Remaining: ${shouldUpdate.cardinality()} (Mem: ${solver.memory()/1_000_000}MB)")
+                    println("Remaining: ${shouldUpdate.cardinality()}")
                     solver
                 }
                 // go through all neighbours
@@ -132,7 +132,7 @@ class ColouredGraph(
     fun findComponents(onComponents: (StateMap) -> Unit) = solver.run {
         // First, detect all sinks - this will prune A LOT of state space...
         val sinks = newMap()
-        /*println("Detecting sinks!")
+        println("Detecting sinks!")
         for (s in 0 until stateCount) {
             val hasNext = (0 until dimensions)
                     .map { d -> solver.transitionParams(s, d) }
@@ -145,8 +145,8 @@ class ColouredGraph(
                 onComponents(map)
             }
         }
-        val canReachSink = sinks.reachBackward()*/
-        val canReachSink = newMap()
+        val canReachSink = sinks.reachBackward()
+        //val canReachSink = newMap()
         val workQueue = ArrayList<StateMap>()
         val groundZero = canReachSink.invert().trim()
         if (groundZero.size > 0) workQueue.add(groundZero)
@@ -181,14 +181,14 @@ class ColouredGraph(
         }
     }
 
-    private fun StateMap.printFull() {
+    /*private fun StateMap.printFull() {
         this.forEach { (s, p) ->
             solver.run {
                 println("S: ${states.decode(s).toList()} has ${p.cardinality()}")
                 p.print()
             }
         }
-    }
+    }*/
 
     private fun StateMap.trim(): StateMap {
         if (!trimEnabled) return this

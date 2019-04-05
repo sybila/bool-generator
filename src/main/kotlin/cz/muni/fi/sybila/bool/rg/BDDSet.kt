@@ -1,7 +1,7 @@
 package cz.muni.fi.sybila.bool.rg
 
 import jdd.bdd.BDD
-
+/*
 data class BDDSet(
         val pointer: Int, private val universe: BDD
 ) {
@@ -13,4 +13,4 @@ data class BDDSet(
         universe.deref(pointer)
     }
 
-}
+}*/

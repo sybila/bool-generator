@@ -287,14 +287,6 @@ object Network {
 
     }
 
-    val G1S = network {
-        val DSB = specie("DSB")
-        val SSB = specie("SSB")
-        val ATM = specie("ATM")
-        val ATR = specie("ATR")
-
-    }
-
     // #P = 233, |P| = ???
     val CellCycle = network {
         val CycD = specie("CycD")
