@@ -2,6 +2,7 @@ package cz.muni.fi.sybila.bool.rg.bdd
 
 import java.io.File
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 /**
@@ -142,7 +143,7 @@ class BDDWorker(
         return result
     }
 
-    private data class Triple(val a: Int, val b: Int, val c: Int)
+    private data class Triple(var a: Int, var b: Int, var c: Int)
 
     private inline fun apply(a: BDD, b: BDD, op: (Int, Int) -> Int): BDD {
         if (a.isTerminal() and b.isTerminal()) {
@@ -150,7 +151,6 @@ class BDDWorker(
             return if (result == 0) zero else one
         }
 
-        val triples = HashMap<Triple, Int>()
         // in this case, work stack saves pairs of nodes
         push(a.root()); push(b.root())           // init BDD exploration
         pushWork(numVars); pushWork(numVars)  // add terminal nodes to result
@@ -196,7 +196,7 @@ class BDDWorker(
                         saveCache(nodeA, nodeB, leftNew)
                     } else {
                         // new node needs to be created
-                        val triple = Triple(leftNew, rightNew, a.v(nodeA))
+                        val triple = obtainTriple(leftNew, rightNew, a.v(nodeA))
                         var existing = triples[triple]
                         if (existing == null) {
                             pushWork3(leftNew, rightNew, a.v(nodeA))
@@ -236,7 +236,7 @@ class BDDWorker(
                         saveCache(nodeA, nodeB, leftNew)
                     } else {
                         // new node needs to be created
-                        val triple = Triple(leftNew, rightNew, a.v(nodeA))
+                        val triple = obtainTriple(leftNew, rightNew, a.v(nodeA))
                         var existing = triples[triple]
                         if (existing == null) {
                             pushWork3(leftNew, rightNew, a.v(nodeA))
@@ -276,7 +276,7 @@ class BDDWorker(
                         saveCache(nodeA, nodeB, leftNew)
                     } else {
                         // new node needs to be created
-                        val triple = Triple(leftNew, rightNew, b.v(nodeB))
+                        val triple = obtainTriple(leftNew, rightNew, b.v(nodeB))
                         var existing = triples[triple]
                         if (existing == null) {
                             pushWork3(leftNew, rightNew, b.v(nodeB))
@@ -299,6 +299,8 @@ class BDDWorker(
         } while (stackNotEmpty)
 
         clearCache()
+        triples.keys.forEach { triplesCache.add(it) }
+        triples.clear()
 
         return when {
             isZero -> {
@@ -409,6 +411,19 @@ class BDDWorker(
 
     private fun clearCache() {
         nodeCache.clear()
+    }
+
+    private val triples = HashMap<Triple, Int>(10_000)
+
+    private val triplesCache = ArrayList<Triple>(10_000)
+
+    private fun obtainTriple(a: Int, b: Int, c: Int): Triple {
+        if (triplesCache.isEmpty()) return Triple(a, b, c)
+        val t = triplesCache.removeAt(triplesCache.lastIndex)
+        t.a = a
+        t.b = b
+        t.c = c
+        return t
     }
 
 }

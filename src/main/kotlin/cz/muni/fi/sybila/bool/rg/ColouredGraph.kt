@@ -31,7 +31,12 @@ class ColouredGraph(
         // repeat
         while (!shouldUpdate.isEmpty) {
             var state = shouldUpdate.nextSetBit(0)
+            var i = 0
             while (state > -1) {
+                i += 1
+                if (i % 20 == 0) {
+                    println("Remaining: ${shouldUpdate.cardinality()} (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
+                }
                 // go through all neighbours
                 for (d in 0 until dimensions) {
                     solver.run {
@@ -72,7 +77,12 @@ class ColouredGraph(
         // repeat
         while (!shouldUpdate.isEmpty) {
             var state = shouldUpdate.nextSetBit(0)
+            var i = 0
             while (state > -1) {
+                i += 1
+                if (i % 20 == 0) {
+                    println("Remaining: ${shouldUpdate.cardinality()} (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
+                }
                 // go through all neighbours
                 for (d in 0 until dimensions) {
                     solver.run {
