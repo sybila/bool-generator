@@ -170,7 +170,7 @@ class ColouredGraph(
         val canReachSink = sinks.reachBackward()*/
         val canReachSink = newMap()
         val workQueue = ArrayList<StateMap>()
-        val groundZero = canReachSink.invert().trim()
+        val groundZero = canReachSink.invert()
         if (groundZero.size > 0) workQueue.add(groundZero)
         while (workQueue.isNotEmpty()) {
             val universe = workQueue.removeAt(workQueue.lastIndex)
@@ -191,14 +191,14 @@ class ColouredGraph(
             }
 
             if (reachableTerminalComponents.size > 0) {
-                workQueue.add(reachableTerminalComponents.trim())
+                workQueue.add(reachableTerminalComponents)
             }
 
             // Find universe of terminal components not reachable from pivot
             val basinOfReachableComponents = forward.reachBackward(universe)
             val unreachableComponents = universe.subtract(basinOfReachableComponents)
             if (unreachableComponents.size > 0) {
-                workQueue.add(unreachableComponents.trim())
+                workQueue.add(unreachableComponents)
             }
         }
     }
@@ -212,7 +212,7 @@ class ColouredGraph(
         }
     }*/
 
-    private fun StateMap.trim(): StateMap {
+    /*private fun StateMap.trim(): StateMap {
         if (!trimEnabled) return this
         val trimmed = DecreasingStateMap(this, solver)
         val update = BitSet(stateCount)
@@ -250,7 +250,7 @@ class ColouredGraph(
         }
         println("Trimmed ${this.size} -> ${trimmed.size}")
         return trimmed.toStateMap()
-    }
+    }*/
 
     private fun StateMap.restrict(colours: BDDSet): StateMap {
         val result = newMap()

@@ -2,6 +2,7 @@ package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.bdd.BDD
 import cz.muni.fi.sybila.bool.rg.map.ArrayStateMap
+import cz.muni.fi.sybila.bool.rg.map.ConcurrentArrayStateMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
@@ -18,7 +19,7 @@ typealias Dimension = Int
 // The index of a specie in the standardized ordering (given by the network)
 typealias Specie = Int
 
-typealias StateMap = ArrayStateMap
+typealias StateMap = ConcurrentArrayStateMap
 
 typealias BDDSet = BDD
 
@@ -35,7 +36,7 @@ inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
     return result
 }
 
-val parallelism = Runtime.getRuntime().availableProcessors() / 2
+val parallelism = Runtime.getRuntime().availableProcessors()
 val pool: ExecutorService = Executors.newFixedThreadPool(parallelism)
 
 fun ExecutorService.parallel(action: () -> Unit) {
