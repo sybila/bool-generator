@@ -13,7 +13,7 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.FissionYeast2008
+    val network = Network.BuddingYeast2008
 
     val states = BooleanStateEncoder(network)
     val solver = BDDSolver(network)

@@ -300,13 +300,14 @@ class BDDWorker(
             }
         } while (stackNotEmpty)
 
-        if (nodeCache.size > maxSize) {
-            maxSize = nodeCache.size
-            println("Cache size: $maxSize")
-        }
         clearCache()
         triples.keys.forEach { triplesCache.add(it) }
         triples.clear()
+
+        if (workEnd > maxSize) {
+            println("Max BDD size: $workEnd")
+            maxSize = workEnd
+        }
 
         return when {
             isZero -> {
@@ -320,6 +321,9 @@ class BDDWorker(
             else -> exportWork()
         }
     }
+
+
+    private var maxSize = 1000
 
 
     // Utility methods for BDD inspection
@@ -407,9 +411,10 @@ class BDDWorker(
      */
     private val nodeCache = PairMap2()
 
-    private var maxSize = 1000
-
     private fun saveCache(a: Int, b: Int, value: Int) {
+        if (nodeCache.size > 100_000) {
+            nodeCache.clear()
+        }
         nodeCache.put(a.toLong().shl(31)+b, value)
     }
 
