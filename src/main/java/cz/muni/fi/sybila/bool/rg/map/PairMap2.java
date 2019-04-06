@@ -103,6 +103,10 @@ public class PairMap2 {
     private int threshold;
     private final float loadFactor;
 
+    public int getSize() {
+        return size;
+    }
+
     /* ---------------- Public operations -------------- */
 
     public PairMap2(int initialCapacity, float loadFactor) {

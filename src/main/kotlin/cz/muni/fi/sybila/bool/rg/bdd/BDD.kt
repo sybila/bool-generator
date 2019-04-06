@@ -300,6 +300,10 @@ class BDDWorker(
             }
         } while (stackNotEmpty)
 
+        if (nodeCache.size > maxSize) {
+            maxSize = nodeCache.size
+            println("Cache size: $maxSize")
+        }
         clearCache()
         triples.keys.forEach { triplesCache.add(it) }
         triples.clear()
@@ -402,6 +406,8 @@ class BDDWorker(
      * TODO: Find some map that can work with native types
      */
     private val nodeCache = PairMap2()
+
+    private var maxSize = 1000
 
     private fun saveCache(a: Int, b: Int, value: Int) {
         nodeCache.put(a.toLong().shl(31)+b, value)
