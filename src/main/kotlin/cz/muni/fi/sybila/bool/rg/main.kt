@@ -1,6 +1,7 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.BooleanNetwork.Effect.*
+import cz.muni.fi.sybila.bool.rg.map.PairMap
 
 fun main() {
 
@@ -33,6 +34,7 @@ fun main() {
     println("Elapsed: ${elapsed}s")
     println("Ops: ${solver.BDDops}")
 
+    println("PairMap: ${PairMap.tableResize} ${PairMap.newBlock} ${PairMap.resizeBlock}")
     pool.shutdownNow()
 
 }

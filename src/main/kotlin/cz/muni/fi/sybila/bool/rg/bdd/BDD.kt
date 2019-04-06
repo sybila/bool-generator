@@ -1,5 +1,7 @@
 package cz.muni.fi.sybila.bool.rg.bdd
 
+import cz.muni.fi.sybila.bool.rg.map.PairMap
+import cz.muni.fi.sybila.bool.rg.map.PairMap2
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
@@ -167,7 +169,7 @@ class BDDWorker(
         var isZero = true
         do {
             val nodeB = peek1(); val nodeA = peek2() // order is reversed (stack)
-            if (getCache(nodeA, nodeB) != null) {
+            if (getCache(nodeA, nodeB) >= 0) {
                 pop(); pop(); continue
             }
             val varA = a.v(nodeA); val varB = b.v(nodeB)
@@ -181,13 +183,13 @@ class BDDWorker(
                 val leftNew = if (leftA.isTerminal() and leftB.isTerminal()) {
                     op(leftA, leftB).also { if (it == 1) isZero = false }
                 } else {
-                    getCache(leftA, leftB) ?: -1
+                    getCache(leftA, leftB)
                 }
 
                 val rightNew = if (rightA.isTerminal() and rightB.isTerminal()) {
                     op(rightA, rightB).also { if (it == 1) isZero = false }
                 } else {
-                    getCache(rightA, rightB) ?: -1
+                    getCache(rightA, rightB)
                 }
 
                 if (leftNew > -1 && rightNew > -1) {
@@ -222,13 +224,13 @@ class BDDWorker(
                 val leftNew = if (leftA.isTerminal() and nodeB.isTerminal()) {
                     op(leftA, nodeB).also { if (it == 1) isZero = false }
                 } else {
-                    getCache(leftA, nodeB) ?: -1
+                    getCache(leftA, nodeB)
                 }
 
                 val rightNew = if (rightA.isTerminal() and nodeB.isTerminal()) {
                     op(rightA, nodeB).also { if (it == 1) isZero = false }
                 } else {
-                    getCache(rightA, nodeB) ?: -1
+                    getCache(rightA, nodeB)
                 }
 
                 if (leftNew > -1 && rightNew > -1) {
@@ -262,13 +264,13 @@ class BDDWorker(
                 val leftNew = if (nodeA.isTerminal() and leftB.isTerminal()) {
                     op(nodeA, leftB).also { if (it == 1) isZero = false }
                 } else {
-                    getCache(nodeA, leftB) ?: -1
+                    getCache(nodeA, leftB)
                 }
 
                 val rightNew = if (nodeA.isTerminal() and rightB.isTerminal()) {
                     op(nodeA, rightB).also { if (it == 1) isZero = false }
                 } else {
-                    getCache(nodeA, rightB) ?: -1
+                    getCache(nodeA, rightB)
                 }
 
                 if (leftNew > -1 && rightNew > -1) {
@@ -399,14 +401,14 @@ class BDDWorker(
      * We use long as keys to avoid extra allocation (we will have to alloc int objects anyway :/)
      * TODO: Find some map that can work with native types
      */
-    private val nodeCache = HashMap<Long, Int>()
+    private val nodeCache = PairMap2()
 
     private fun saveCache(a: Int, b: Int, value: Int) {
-        nodeCache[a.toLong().shl(31) + b] = value
+        nodeCache.put(a.toLong().shl(31)+b, value)
     }
 
-    private fun getCache(a: Int, b: Int): Int? {
-        return nodeCache[a.toLong().shl(31) + b]
+    private fun getCache(a: Int, b: Int): Int {
+        return nodeCache.get(a.toLong().shl(31)+b)
     }
 
     private fun clearCache() {
