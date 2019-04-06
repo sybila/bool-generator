@@ -412,9 +412,9 @@ class BDDWorker(
     private val nodeCache = PairMap2()
 
     private fun saveCache(a: Int, b: Int, value: Int) {
-        if (nodeCache.size > 1_000_000) {
+        /*if (nodeCache.size > 1_000_000) {
             nodeCache.clear()
-        }
+        }*/
         nodeCache.put(a.toLong().shl(31)+b, value)
     }
 
