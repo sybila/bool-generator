@@ -19,6 +19,11 @@ apply plugin: 'kotlin'
 apply plugin: 'antlr'
 apply plugin: 'maven'
 apply plugin: 'jacoco'
+apply plugin: 'application'
+
+application {
+    mainClassName = 'cz.muni.fi.sybila.bool.rg.MainKt'
+}
 
 group = "com.github.sybila"
 version = '0.0.1'
