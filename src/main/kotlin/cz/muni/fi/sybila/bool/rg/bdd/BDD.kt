@@ -1,5 +1,6 @@
 package cz.muni.fi.sybila.bool.rg.bdd
 
+import java.io.File
 import java.util.*
 import kotlin.collections.HashMap
 
@@ -36,22 +37,68 @@ class BDDWorker(
         private val numVars: Int
 ) {
 
-    val one = intArrayOf(-1, -1)
-    val zero = intArrayOf(-1)
 
-    fun variable(v: Int) = intArrayOf(-1, -1, 0, 1, v)
-    fun notVariable(v: Int) = intArrayOf(-1, -1, 1, 0, v)
+    private val control = HashMap<List<Int>, Int>()
+
+    val one = intArrayOf(numVars, numVars).also {
+        control[it.toList()] = 1
+    }
+    val zero = intArrayOf(numVars).also {
+        control[it.toList()] = 0
+    }
+
+    fun variable(v: Int) = intArrayOf(numVars, numVars, 0, 1, v)
+    fun notVariable(v: Int) = intArrayOf(numVars, numVars, 1, 0, v)
 
     fun and(a: BDD, b: BDD) = apply(a, b) { i, j -> i and j }
+
     fun or(a: BDD, b: BDD) = apply(a, b) { i, j -> i or j }
+
     fun imp(a: BDD, b: BDD) = apply(a, b) { i, j -> if (i == 0) 1 else j }
+
     fun biImp(a: BDD, b: BDD) = apply(a, b) { i, j -> if (i == j) 1 else 0 }
+
     fun not(a: BDD) = negation(a)
     fun isUnit(a: BDD): Boolean = a.isOne()
     fun isEmpty(a: BDD): Boolean = a.isZero()
     fun satCount(a: BDD): Double = cardinality(a)
     fun nodeCount(a: BDD): Int = (a.size - 2) / 3
 
+    fun printDot(a: BDD, filename: String) {
+        val done = IntArray(a.size)
+        File(filename).bufferedWriter().use {
+            push(a.root())
+            it.write("""
+                digraph G {
+	                init__ [label="", style=invis, height=0, width=0];
+	                init__ -> ${a.root()};
+            """.trimIndent())
+            do {
+                val node = peek()
+                pop()
+                if (done[node] == 1 || node.isTerminal()) continue
+                it.write("$node[label=\"v${a.v(node)+1}\"];")
+                it.newLine()
+                if (a.left(node) != 0) {
+                    it.write("$node-> ${a.left(node)} [style=dotted];")
+                    it.newLine()
+                    push(a.left(node))
+                }
+                if (a.right(node) != 0) {
+                    it.write("$node-> ${a.right(node)} [style=filled];")
+                    it.newLine()
+                    push(a.right(node))
+                }
+                done[node] = 1
+            } while (stackNotEmpty)
+            it.write("""
+                0 [shape=box, label="0", style=filled, shape=box, height=0.3, width=0.3];
+                1 [shape=box, label="1", style=filled, shape=box, height=0.3, width=0.3];
+
+                }
+            """.trimIndent())
+        }
+    }
 
     fun cardinality(a: BDD): Double {
         // this is rather wasteful, but at this point computing cardinality is not a bottleneck so we keep it as is.
@@ -65,8 +112,8 @@ class BDDWorker(
             }
             val left = a.left(node); val right = a.right(node)
             if (cache[left] >= 0.0 && cache[right] >= 0.0) {
-                val leftCardinality = cache[left] * Math.pow(2.0, (a.v(node) - a.v(left) - 1).toDouble())
-                val rightCardinality = cache[right] * Math.pow(2.0, (a.v(node) - a.v(right) - 1).toDouble())
+                val leftCardinality = cache[left] * Math.pow(2.0, (a.v(left) - a.v(node) - 1).toDouble())
+                val rightCardinality = cache[right] * Math.pow(2.0, (a.v(right) - a.v(node) - 1).toDouble())
                 cache[node] = leftCardinality + rightCardinality
                 pop()
             } else {
@@ -74,7 +121,7 @@ class BDDWorker(
                 if (cache[left]  < 0.0) push(left)
             }
         } while (stackNotEmpty)
-        return cache.last() * Math.pow(2.0, (numVars - a.v(a.root()) - 1).toDouble())
+        return cache.last() * Math.pow(2.0, (a.v(a.root())).toDouble())
     }
 
     private fun negation(a: BDD): BDD {
@@ -95,15 +142,18 @@ class BDDWorker(
         return result
     }
 
+    private data class Triple(val a: Int, val b: Int, val c: Int)
+
     private inline fun apply(a: BDD, b: BDD, op: (Int, Int) -> Int): BDD {
         if (a.isTerminal() and b.isTerminal()) {
             val result = op(a.root(), b.root())
             return if (result == 0) zero else one
         }
 
+        val triples = HashMap<Triple, Int>()
         // in this case, work stack saves pairs of nodes
         push(a.root()); push(b.root())           // init BDD exploration
-        pushWork(-1); pushWork(-1)  // add terminal nodes to result
+        pushWork(numVars); pushWork(numVars)  // add terminal nodes to result
 
         // this extra variable is used to detect whether the resulting BDD is empty, because we have
         // already added the 1 node, we need to remove it if it was not used anywhere.
@@ -146,8 +196,14 @@ class BDDWorker(
                         saveCache(nodeA, nodeB, leftNew)
                     } else {
                         // new node needs to be created
-                        pushWork3(leftNew, rightNew, a.v(nodeA))
-                        saveCache(nodeA, nodeB, lastWork())
+                        val triple = Triple(leftNew, rightNew, a.v(nodeA))
+                        var existing = triples[triple]
+                        if (existing == null) {
+                            pushWork3(leftNew, rightNew, a.v(nodeA))
+                            existing = lastWork()
+                            triples[triple] = existing
+                        }
+                        saveCache(nodeA, nodeB, existing)
                     }
                     pop(); pop()
                 } else {
@@ -158,7 +214,7 @@ class BDDWorker(
                         push(leftA); push(leftB)
                     }
                 }
-            } else if (varA > varB) {
+            } else if (varA < varB) {
                 // node A is "higher" in the graph than node B (remember, we assume variable zero is the "bottom" level.
                 // split on A, but keep B
                 val leftA = a.left(nodeA); val rightA = a.right(nodeA)
@@ -179,8 +235,15 @@ class BDDWorker(
                     if (leftNew == rightNew) {
                         saveCache(nodeA, nodeB, leftNew)
                     } else {
-                        pushWork3(leftNew, rightNew, a.v(nodeA)) // use "higher" node
-                        saveCache(nodeA, nodeB, lastWork())
+                        // new node needs to be created
+                        val triple = Triple(leftNew, rightNew, a.v(nodeA))
+                        var existing = triples[triple]
+                        if (existing == null) {
+                            pushWork3(leftNew, rightNew, a.v(nodeA))
+                            existing = lastWork()
+                            triples[triple] = existing
+                        }
+                        saveCache(nodeA, nodeB, existing)
                     }
                     pop(); pop()
                 } else {
@@ -212,8 +275,15 @@ class BDDWorker(
                     if (leftNew == rightNew) {
                         saveCache(nodeA, nodeB, leftNew)
                     } else {
-                        pushWork3(leftNew, rightNew, b.v(nodeB)) // use "higher" node
-                        saveCache(nodeA, nodeB, lastWork())
+                        // new node needs to be created
+                        val triple = Triple(leftNew, rightNew, b.v(nodeB))
+                        var existing = triples[triple]
+                        if (existing == null) {
+                            pushWork3(leftNew, rightNew, b.v(nodeB))
+                            existing = lastWork()
+                            triples[triple] = existing
+                        }
+                        saveCache(nodeA, nodeB, existing)
                     }
                     pop(); pop()
                 } else {
@@ -228,12 +298,19 @@ class BDDWorker(
             }
         } while (stackNotEmpty)
 
-        if (isZero) return zero
-        if (lastWork() == 1) return one
-
         clearCache()
 
-        return exportWork()
+        return when {
+            isZero -> {
+                clearWork()
+                zero
+            }
+            lastWork() == 1 -> {
+                clearWork()
+                one
+            }
+            else -> exportWork()
+        }
     }
 
 
@@ -308,6 +385,10 @@ class BDDWorker(
         Arrays.fill(workArray, 0)
         workEnd = -1
         return array
+    }
+
+    private fun clearWork() {
+        workEnd = -1
     }
 
     /**

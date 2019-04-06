@@ -1,12 +1,11 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
-import jdd.util.Configuration
 import java.util.*
 import kotlin.collections.ArrayList
 
 class ColouredGraph(
-        private val network: BooleanNetwork,
+        network: BooleanNetwork,
         private val solver: BDDSolver,
         private val trimEnabled: Boolean = false
 ) {
@@ -31,15 +30,8 @@ class ColouredGraph(
         }
         // repeat
         while (!shouldUpdate.isEmpty) {
-            println("Should update: ${shouldUpdate.cardinality()}")
             var state = shouldUpdate.nextSetBit(0)
-            var i = 0
             while (state > -1) {
-                i += 1
-                if (i % 20 == 0) {
-                    println("Remaining: ${shouldUpdate.cardinality()}")
-                    solver
-                }
                 // go through all neighbours
                 for (d in 0 until dimensions) {
                     solver.run {
@@ -79,7 +71,6 @@ class ColouredGraph(
         }
         // repeat
         while (!shouldUpdate.isEmpty) {
-            println("Should update: ${shouldUpdate.cardinality()}")
             var state = shouldUpdate.nextSetBit(0)
             while (state > -1) {
                 // go through all neighbours
