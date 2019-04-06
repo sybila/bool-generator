@@ -12,7 +12,7 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.G2A
+    val network = Network.BuddingYeast2008
 
     val states = BooleanStateEncoder(network)
     val solver = BDDSolver(network)
@@ -32,5 +32,7 @@ fun main() {
     val elapsed = (((System.currentTimeMillis() - start) / 1000.0) * 100).toInt() / 100.0
     println("Elapsed: ${elapsed}s")
     println("Ops: ${solver.BDDops}")
+
+    pool.shutdownNow()
 
 }

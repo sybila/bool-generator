@@ -34,33 +34,35 @@ class ColouredGraph(
         while (!shouldUpdate.isEmpty) {
             //println("Wave: ${shouldUpdate.unsafeSize()}")
             val next = ConcurrentStateQueue(stateCount)
-            var state = shouldUpdate.next()
-            var i = 0
-            while (state > -1) {
-                i += 1
-                if (i % 20 == 0) {
-                    println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
-                }
-                // go through all neighbours
-                for (d in 0 until dimensions) {
-                    solver.run {
-                        val target = states.flipValue(state, d)
-                        val edgeParams = solver.transitionParams(state, d)
-                        // bring colors from source state, bounded by guard
-                        val bound = if (guard == null) result.get(state) else {
-                            result.get(state) and guard.get(target)
-                        }
-                        // update target -> if changed, mark it as working
-                        val changed = result.union(target, edgeParams and bound)
-                        if (changed) {
-                            next.set(target)
+            pool.parallel {
+                var state = shouldUpdate.next()
+                var i = 0
+                while (state > -1) {
+                    i += 1
+                    if (i % 100 == 0) {
+                        println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
+                    }
+                    // go through all neighbours
+                    for (d in 0 until dimensions) {
+                        solver.run {
+                            val target = states.flipValue(state, d)
+                            val edgeParams = solver.transitionParams(state, d)
+                            // bring colors from source state, bounded by guard
+                            val bound = if (guard == null) result.get(state) else {
+                                result.get(state) and guard.get(target)
+                            }
+                            // update target -> if changed, mark it as working
+                            val changed = result.union(target, edgeParams and bound)
+                            if (changed) {
+                                next.set(target)
+                            }
                         }
                     }
+                    // mark state as done
+                    //shouldUpdate.clear(state)
+                    // load next state
+                    state = shouldUpdate.next()
                 }
-                // mark state as done
-                //shouldUpdate.clear(state)
-                // load next state
-                state = shouldUpdate.next()
             }
             shouldUpdate = next
         }
@@ -91,33 +93,35 @@ class ColouredGraph(
         // repeat
         while (!shouldUpdate.isEmpty) {
             val next = ConcurrentStateQueue(stateCount)
-            var state = shouldUpdate.next()
-            var i = 0
-            while (state > -1) {
-                i += 1
-                if (i % 20 == 0) {
-                    println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
-                }
-                // go through all neighbours
-                for (d in 0 until dimensions) {
-                    solver.run {
-                        val source = states.flipValue(state, d)
-                        val edgeParams = solver.transitionParams(source, d)
-                        // bring colors from source state, bounded by guard
-                        val bound = if (guard == null) result.get(state) else {
-                            result.get(state) and guard.get(source)
-                        }
-                        // update target -> if changed, mark it as working
-                        val changed = result.union(source, edgeParams and bound)
-                        if (changed) {
-                            next.set(source)
+            pool.parallel {
+                var state = shouldUpdate.next()
+                var i = 0
+                while (state > -1) {
+                    i += 1
+                    if (i % 100 == 0) {
+                        println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
+                    }
+                    // go through all neighbours
+                    for (d in 0 until dimensions) {
+                        solver.run {
+                            val source = states.flipValue(state, d)
+                            val edgeParams = solver.transitionParams(source, d)
+                            // bring colors from source state, bounded by guard
+                            val bound = if (guard == null) result.get(state) else {
+                                result.get(state) and guard.get(source)
+                            }
+                            // update target -> if changed, mark it as working
+                            val changed = result.union(source, edgeParams and bound)
+                            if (changed) {
+                                next.set(source)
+                            }
                         }
                     }
+                    // mark state as done
+                    //shouldUpdate.clear(state)
+                    // load next state
+                    state = shouldUpdate.next()
                 }
-                // mark state as done
-                //shouldUpdate.clear(state)
-                // load next state
-                state = shouldUpdate.next()
             }
             shouldUpdate = next
         }

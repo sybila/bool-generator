@@ -2,6 +2,9 @@ package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.bdd.BDD
 import cz.muni.fi.sybila.bool.rg.map.ArrayStateMap
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 
 // The bit vector of values in the state
 typealias State = Int
@@ -30,4 +33,13 @@ inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
         result.add(this.last())
     }
     return result
+}
+
+val parallelism = Runtime.getRuntime().availableProcessors()
+val pool: ExecutorService = Executors.newFixedThreadPool(parallelism)
+
+fun ExecutorService.parallel(action: () -> Unit) {
+    (1..parallelism).map {
+        pool.submit(action)
+    }.map { it.get() }
 }
