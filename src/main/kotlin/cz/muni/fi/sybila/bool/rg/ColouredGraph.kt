@@ -32,8 +32,8 @@ class ColouredGraph(
         }
         // repeat
         while (!shouldUpdate.isEmpty) {
-            //println("Wave: ${shouldUpdate.unsafeSize()}")
             val next = ConcurrentStateQueue(stateCount)
+            println("Wave: ${shouldUpdate.unsafeSize()}")
             pool.parallel {
                 var state = shouldUpdate.next()
                 var i = 0
@@ -93,6 +93,7 @@ class ColouredGraph(
         // repeat
         while (!shouldUpdate.isEmpty) {
             val next = ConcurrentStateQueue(stateCount)
+            println("Wave: ${shouldUpdate.unsafeSize()}")
             pool.parallel {
                 var state = shouldUpdate.next()
                 var i = 0
