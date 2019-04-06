@@ -18,7 +18,9 @@ class BDDSolver(
     private val params = BooleanParamEncoder(network)
     private val states = BooleanStateEncoder(network)
 
-    private val universe = BDDWorker(params.parameterCount)
+    private val threadUniverse = ThreadLocal.withInitial { BDDWorker(params.parameterCount) }
+    private val universe
+        get() = threadUniverse.get()
 
             /* Maps our parameter indices to BDD sets. */
     private val parameterVarNames = Array(params.parameterCount) { universe.variable(it) }

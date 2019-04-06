@@ -1,6 +1,8 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
+import cz.muni.fi.sybila.bool.rg.parallel.ConcurrentStateQueue
+import cz.muni.fi.sybila.bool.rg.parallel.StateQueue
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -18,7 +20,7 @@ class ColouredGraph(
     private fun newMap(): StateMap = StateMap(stateCount, solver)
 
     private fun StateMap.reachForward(guard: StateMap? = null): StateMap {
-        val shouldUpdate = BitSet(stateCount)
+        var shouldUpdate = ConcurrentStateQueue(stateCount)
         val result = newMap()
         // init reach
         for (s in 0 until stateCount) {
@@ -30,12 +32,14 @@ class ColouredGraph(
         }
         // repeat
         while (!shouldUpdate.isEmpty) {
-            var state = shouldUpdate.nextSetBit(0)
+            //println("Wave: ${shouldUpdate.unsafeSize()}")
+            val next = ConcurrentStateQueue(stateCount)
+            var state = shouldUpdate.next()
             var i = 0
             while (state > -1) {
                 i += 1
                 if (i % 20 == 0) {
-                    println("Remaining: ${shouldUpdate.cardinality()} (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
+                    println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
                 }
                 // go through all neighbours
                 for (d in 0 until dimensions) {
@@ -49,22 +53,32 @@ class ColouredGraph(
                         // update target -> if changed, mark it as working
                         val changed = result.union(target, edgeParams and bound)
                         if (changed) {
-                            shouldUpdate.set(target)
+                            next.set(target)
                         }
                     }
                 }
                 // mark state as done
-                shouldUpdate.clear(state)
+                //shouldUpdate.clear(state)
                 // load next state
-                state = shouldUpdate.nextSetBit(state + 1)
+                state = shouldUpdate.next()
             }
+            shouldUpdate = next
         }
 
         return result
     }
 
+    private fun StateMap.isTheSame(that: StateMap): Boolean {
+        for (s in 0 until stateCount) {
+            if (!Arrays.equals(this.get(s), that.get(s))) {
+                return false
+            }
+        }
+        return true
+    }
+
     private fun StateMap.reachBackward(guard: StateMap? = null): StateMap {
-        val shouldUpdate = BitSet(stateCount)
+        var shouldUpdate = ConcurrentStateQueue(stateCount)
         val result = newMap()
         // init reach
         for (s in 0 until stateCount) {
@@ -76,12 +90,13 @@ class ColouredGraph(
         }
         // repeat
         while (!shouldUpdate.isEmpty) {
-            var state = shouldUpdate.nextSetBit(0)
+            val next = ConcurrentStateQueue(stateCount)
+            var state = shouldUpdate.next()
             var i = 0
             while (state > -1) {
                 i += 1
                 if (i % 20 == 0) {
-                    println("Remaining: ${shouldUpdate.cardinality()} (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
+                    println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
                 }
                 // go through all neighbours
                 for (d in 0 until dimensions) {
@@ -95,15 +110,16 @@ class ColouredGraph(
                         // update target -> if changed, mark it as working
                         val changed = result.union(source, edgeParams and bound)
                         if (changed) {
-                            shouldUpdate.set(source)
+                            next.set(source)
                         }
                     }
                 }
                 // mark state as done
-                shouldUpdate.clear(state)
+                //shouldUpdate.clear(state)
                 // load next state
-                state = shouldUpdate.nextSetBit(state + 1)
+                state = shouldUpdate.next()
             }
+            shouldUpdate = next
         }
 
         return result
