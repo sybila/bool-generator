@@ -154,7 +154,7 @@ class ColouredGraph(
     fun findComponents(onComponents: (StateMap) -> Unit) = solver.run {
         // First, detect all sinks - this will prune A LOT of state space...
         val sinks = newMap()
-        /*println("Detecting sinks!")
+        println("Detecting sinks!")
         for (s in 0 until stateCount) {
             val hasNext = (0 until dimensions)
                     .map { d -> solver.transitionParams(s, d) }
@@ -167,8 +167,8 @@ class ColouredGraph(
                 onComponents(map)
             }
         }
-        val canReachSink = sinks.reachBackward()*/
-        val canReachSink = newMap()
+        val canReachSink = sinks.reachBackward()
+        //val canReachSink = newMap()
         val workQueue = ArrayList<StateMap>()
         val groundZero = canReachSink.invert()
         if (groundZero.size > 0) workQueue.add(groundZero)
