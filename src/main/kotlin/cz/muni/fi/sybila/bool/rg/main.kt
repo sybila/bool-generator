@@ -14,7 +14,7 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.G2A
+    val network = Network.FissionYeast2008
 
     val states = BooleanStateEncoder(network)
     val params = BooleanParamEncoder(network)
@@ -39,12 +39,12 @@ fun main() {
     println("Ops: ${solver.BDDops}")
 
     classifier.print()
-    val tree = DecisionTree(params.parameterCount, classifier.export(), solver)
-    //println("Tree size: ${tree.learn()}")
-    val classes = classifier.export()
+    val tree = DecisionTree(params.parameterCount, params.strictRegulationParamSets(), classifier.export(), solver)
+    println("Tree size: ${tree.learn()}")
+    /*val classes = classifier.export()
     for (cls in classes.keys) {
-        println("Class $cls, tree: ${DecisionTree(params.parameterCount, classes.joinToClass(cls, solver), solver).learn()}")
-    }
+        println("Class $cls, tree: ${DecisionTree(params.parameterCount, params.strictRegulationParamSets(), classes.joinToClass(cls, solver), solver).learn()}")
+    }*/
     pool.shutdownNow()
 
 }

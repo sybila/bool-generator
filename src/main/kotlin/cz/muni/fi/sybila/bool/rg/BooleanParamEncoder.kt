@@ -69,6 +69,16 @@ class BooleanParamEncoder(
         set
     }
 
+    fun strictRegulationParamSets(): List<Pair<Int, Int>> {
+        val result = ArrayList<Pair<Int, Int>>()
+        for (specie in network.species.indices) {
+            for (r in descendingContexts[specie]) {
+                regulationPairs(r.regulator, r.target).forEach { result.add(it) }
+            }
+        }
+        return result
+    }
+
     /**
      * Compute the index of the parameter which determines the value of [dimension] specie
      * given the current values of regulators specified in [state].

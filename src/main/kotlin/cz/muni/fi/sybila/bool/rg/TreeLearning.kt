@@ -7,6 +7,7 @@ import kotlin.system.exitProcess
 
 class DecisionTree(
         private val parameters: Int,
+        private val strictRegulations: List<Pair<Int, Int>>,
         private val originalClasses: Map<List<String>, BSet>,
         private val solver: BDDSolver
 ) {
@@ -72,29 +73,34 @@ class DecisionTree(
                 val imp = solver.run { variable(p2) uImp variable(p1) }
                 solver.run { Attribute(imp, imp.uNot(), "$p1 >= $p2") }
             }
-        })*/ + (params).flatMap { p1 ->
+        })*//* + (params).flatMap { p1 ->
             (params).map { p2 ->
                 if (p1 <= p2) null else {
                     val eq = solver.run { variable(p1) uBiImp variable(p2) }
                     solver.run { Attribute(eq,  eq.uNot(), "$p1 = $p2") }
                 }
             }.filterNotNull()
-        }/* + (params).flatMap { p1 ->
+        }*//* + (params).flatMap { p1 ->
             (params).map { p2 ->
                 if (p1 <= p2) null else {
                     val both = solver.run {variable(p1) and variable(p2) }
                     solver.run { Attribute(both, both.uNot(), "$p1, $p2") }
                 }
             }.filterNotNull()
+        }*//* + strictRegulations.map { (a, b) ->
+            solver.run {
+                val prop = variable(a) uBiImp variable(b)
+                Attribute(prop.uNot(), prop, "$a != $b")
+            }
         }*/
-        println("Attributes: ${attributes.size}")
+        //println("Attributes: ${attributes.size}")
         return (this.originalClasses.learn(attributes.filter {
             val gain = originalClasses.entropy() - (
                     0.5 * originalClasses.applyAttribute(it.positive).entropy() +
                     0.5 * originalClasses.applyAttribute(it.negative).entropy()
             )
             gain > Double.NEGATIVE_INFINITY
-        }.toSet()) as Result.Decision).size
+        }.toSet()) as? Result.Decision)?.size ?: 0
     }
 
     sealed class Result() {
@@ -119,8 +125,18 @@ class DecisionTree(
             if (dataSet.size <= 1) {
                 //println("Make leaf!")
                 remaining -= dataSet.values.iterator().next().s.cardinality()
-                println("Remaining: $remaining")
+                //println("Remaining: $remaining")
                 return Result.Leaf(dataSet.keys.iterator().next())
+            }
+            val all = dataSet.values.fold(empty) { a, b -> a or b.s }
+            for ((k, p) in dataSet) {
+                val proportion = (p.s.cardinality() / all.cardinality())
+                if (proportion > 0.95) {
+                   // println("Skip - make leaf")
+                    remaining -= dataSet.values.iterator().next().s.cardinality()
+                    //println("Remaining: $remaining")
+                    return Result.Leaf(k)
+                }
             }
             var maxGain = Double.NEGATIVE_INFINITY
             var maxVar: Attribute? = null
