@@ -71,6 +71,18 @@ object Network {
 
         CtrA inhibits GcrA
         DnaA activates GcrA
+
+        GcrA given listOf(DnaA)
+
+        CtrA given listOf(CtrA)
+        CtrA given listOf(CtrA, GcrA)
+        CtrA given listOf(GcrA)
+
+        SciP given listOf(CtrA)
+
+        CcrM given listOf(CtrA)
+
+        DnaA given listOf(CtrA, CcrM)
     }
 
     // #P = 127, |P| = 4.77e14
@@ -121,6 +133,38 @@ object Network {
         Ste9 inhibits Cdc2A
         Rum1 inhibits Cdc2A
         Slp1 inhibits Cdc2A
+
+        SK given listOf(start)
+
+        Ste9 given listOf(PP)
+        //redundant Ste9 given listOf(PP, Ste9)
+        Ste9 given listOf(Ste9)
+        Ste9 given listOf(PP, SK, Ste9)
+        Ste9 given listOf(PP, Cdc2, Ste9)
+        Ste9 given listOf(PP, Cdc2A, Ste9)
+
+        Rum1 given listOf(PP)
+        Rum1 given listOf(Rum1)
+        //redundant Rum1 given listOf(PP, Rum1)
+        Rum1 given listOf(PP, SK, Rum1)
+        Rum1 given listOf(PP, Cdc2, Rum1)
+        Rum1 given listOf(PP, Cdc2A, Rum1)
+
+        PP given listOf(Slp1)
+
+        Slp1 given listOf(Cdc2A)
+
+        Wee1 given listOf(PP)
+        Wee1 given listOf(Wee1)
+        //redundant Wee1 given listOf(PP, Wee1)
+        Wee1 given listOf(PP, Cdc2, Wee1)
+
+        Cdc2A given listOf(Cdc25)
+
+        Cdc25 given listOf(Cdc2)
+        Cdc25 given listOf(Cdc25)
+        //redundant Cdc25 given listOf(Cdc2, Cdc25)
+        Cdc25 given listOf(Cdc2, Cdc25, PP)
     }
 
     // #P = 195, |P| = 8.04e21

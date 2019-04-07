@@ -13,7 +13,9 @@ package cz.muni.fi.sybila.bool.rg
 
 class BooleanNetwork(
         val species: List<String>,
-        val regulations: List<Regulation>
+        val regulations: List<Regulation>,
+        // (a, l) -> a is set to one if all regulators in the list are active
+        val explicitConstraint: List<Pair<Int, List<Int>>> = emptyList()
 ) {
 
     init {

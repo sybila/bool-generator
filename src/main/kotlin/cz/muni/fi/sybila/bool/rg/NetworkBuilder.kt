@@ -4,6 +4,7 @@ class NetworkBuilder {
 
     private val species = ArrayList<String>()
     private val regulations = ArrayList<BooleanNetwork.Regulation>()
+    private val explicit = ArrayList<Pair<Int, List<Int>>>()
 
     fun specie(name: String): String {
         if (name in species) error("Duplicate specie $name")
@@ -15,6 +16,12 @@ class NetworkBuilder {
     infix fun String.activates(that: String) = activation(this, that)
     infix fun String.maybeInhibits(that: String) = inhibition(this, that, false)
     infix fun String.inhibits(that: String) = inhibition(this, that)
+
+    infix fun String.given(regulators: List<String>) {
+        // TODO: Safety checks
+        val target = species.indexOf(this)
+        explicit.add(target to regulators.map { species.indexOf(it) })
+    }
 
     private fun activation(regulator: String, target: String, observable: Boolean = true) {
         val regulatorIndex = species.indexOf(regulator)
@@ -38,7 +45,7 @@ class NetworkBuilder {
         ))
     }
 
-    fun build() = BooleanNetwork(species, regulations)
+    fun build() = BooleanNetwork(species, regulations, explicit)
 
 }
 

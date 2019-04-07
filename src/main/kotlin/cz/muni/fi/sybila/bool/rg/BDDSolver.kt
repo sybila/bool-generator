@@ -34,9 +34,14 @@ class BDDSolver(
         var result = fullWorker.one
         println("Num. parameters: ${params.parameterCount}")
         // Compute the "unit" BDD of valid parameters:
+        var restrictedOnes = fullWorker.one
+        for (one in params.explicitOne) {   // apply explicit constraints (do this first - will be simpler later)
+            restrictedOnes = fullWorker.and(restrictedOnes, fullWorker.variable(one))
+        }
+        result = fullWorker.and(result, restrictedOnes)
         for (r in network.regulations) {
             val pairs = params.regulationPairs(r.regulator, r.target).map { (off, on) ->
-                fullWorker.variable(off) to fullWorker.variable(on)
+                (fullWorker.and(restrictedOnes, fullWorker.variable(off))) to (fullWorker.and(restrictedOnes, fullWorker.variable(on)))
             }
             if (r.observable) {
                 val constraint = pairs
@@ -61,7 +66,9 @@ class BDDSolver(
         println("Redundant variables: ${fullWorker.determinedVars(result)}")
         val (zeroes, ones) = fullWorker.determinedVars(result)
 
-        threadUniverse = ThreadLocal.withInitial { BDDWorker(params.parameterCount - zeroes.size - ones.size) }
+        threadUniverse = ThreadLocal.withInitial {
+            BDDWorker(params.parameterCount - zeroes.size - ones.size)
+        }
         empty = universe.zero
         var i = 0
         var index = 0

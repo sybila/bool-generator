@@ -51,6 +51,24 @@ class BooleanParamEncoder(
 
     val parameterCount = tableSizes.sum()
 
+    val explicitOne = run {
+        val set = HashSet<Int>()
+        for ((target, regulators) in network.explicitConstraint) {
+            val regulatorIndices = regulators.map { reg ->
+                descendingContexts[target].indexOfFirst { it.regulator == reg }
+            }.map { descendingContexts[target].size - it - 1 }  // inverted because first regulator is greatest bit
+            for (row in 0 until tableSizes[target]) {
+                // check if every given regulator is active in given row
+                if (regulatorIndices.all { r ->
+                            row.shr(r).and(1) == 1
+                }) {
+                    set += row + tableCoefficients[target]
+                }
+            }
+        }
+        set
+    }
+
     /**
      * Compute the index of the parameter which determines the value of [dimension] specie
      * given the current values of regulators specified in [state].

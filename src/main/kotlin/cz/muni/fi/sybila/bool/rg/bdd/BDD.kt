@@ -2,6 +2,7 @@ package cz.muni.fi.sybila.bool.rg.bdd
 
 import cz.muni.fi.sybila.bool.rg.map.PairMap2
 import java.io.File
+import java.lang.Exception
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -59,7 +60,12 @@ class BDDWorker(
     fun imp(a: BDD, b: BDD) = apply(a, b) { i, j -> if (i == 0) 1 else j }
 
     fun biImp(a: BDD, b: BDD): BDD {
-        return apply(a, b) { i, j -> if (i == j) 1 else 0 }
+        try {
+            return apply(a, b) { i, j -> if (i == j) 1 else 0 }
+        } catch (e: Exception) {
+            println("Error: ${a.toList()} ${b.toList()}")
+            throw e
+        }
     }
 
     fun not(a: BDD) = negation(a)
