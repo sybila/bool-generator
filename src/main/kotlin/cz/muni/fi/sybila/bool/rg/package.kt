@@ -36,7 +36,7 @@ inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
     return result
 }
 
-val parallelism = Runtime.getRuntime().availableProcessors()
+val parallelism = Runtime.getRuntime().availableProcessors() / 2
 val pool: ExecutorService = Executors.newFixedThreadPool(parallelism)
 
 fun ExecutorService.parallel(action: () -> Unit) {

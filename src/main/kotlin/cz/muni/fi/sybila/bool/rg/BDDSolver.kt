@@ -18,18 +18,71 @@ class BDDSolver(
     private val params = BooleanParamEncoder(network)
     private val states = BooleanStateEncoder(network)
 
-    private val threadUniverse = ThreadLocal.withInitial { BDDWorker(params.parameterCount) }
+    private val threadUniverse: ThreadLocal<BDDWorker>// = ThreadLocal.withInitial { BDDWorker(params.parameterCount) }
     private val universe
         get() = threadUniverse.get()
 
             /* Maps our parameter indices to BDD sets. */
-    private val parameterVarNames = Array(params.parameterCount) { universe.variable(it) }
-    private val parameterNotVarNames = Array(params.parameterCount) { universe.notVariable(it) }
+    private val parameterVarNames: Array<BDDSet>
+    private val parameterNotVarNames: Array<BDDSet>
 
-    val empty: BDDSet = universe.zero
-    val unit: BDDSet = run {
-        var result = universe.one
+    val empty: BDDSet
+    val unit: BDDSet
+
+    init {
+        val fullWorker = BDDWorker(params.parameterCount)
+        var result = fullWorker.one
         println("Num. parameters: ${params.parameterCount}")
+        // Compute the "unit" BDD of valid parameters:
+        for (r in network.regulations) {
+            val pairs = params.regulationPairs(r.regulator, r.target).map { (off, on) ->
+                fullWorker.variable(off) to fullWorker.variable(on)
+            }
+            if (r.observable) {
+                val constraint = pairs
+                        .map { (off, on) -> fullWorker.biImp(off, on) }
+                        .merge { a, b -> fullWorker.and(a, b) }
+                result = fullWorker.and(result, fullWorker.not(constraint))
+            }
+            if (r.effect == BooleanNetwork.Effect.ACTIVATION) {
+                val constraint = pairs
+                        .map { (off, on) -> fullWorker.imp(off, on) }
+                        .merge { a, b -> fullWorker.and(a, b) }
+                result = fullWorker.and(result, constraint)
+            }
+            if (r.effect == BooleanNetwork.Effect.INHIBITION) {
+                val constraint = pairs
+                        .map { (off, on) -> fullWorker.imp(on, off) }
+                        .merge { a, b -> fullWorker.and(a, b) }
+                result = fullWorker.and(result, constraint)
+            }
+        }
+        println("Unit BDD size: ${fullWorker.nodeCount(result)} and cardinality ${fullWorker.cardinality(result)}")
+        println("Redundant variables: ${fullWorker.determinedVars(result)}")
+        val (zeroes, ones) = fullWorker.determinedVars(result)
+
+        threadUniverse = ThreadLocal.withInitial { BDDWorker(params.parameterCount - zeroes.size - ones.size) }
+        empty = universe.zero
+        var i = 0
+        var index = 0
+        val varNames = ArrayList<BDDSet>()
+        while (i < params.parameterCount) {
+            if (i in ones) {
+                varNames.add(universe.one)
+            } else if (i in zeroes) {
+                varNames.add(universe.zero)
+            } else {
+                varNames.add(universe.variable(index))
+                index += 1
+            }
+            i += 1
+        }
+        parameterVarNames = varNames.toTypedArray()
+        parameterNotVarNames = varNames.map { universe.not(it) }.toTypedArray()
+
+        // Compute unit over reduced BDDs:
+        result = universe.one
+        println("Num. parameters: ${params.parameterCount - ones.size - zeroes.size}")
         // Compute the "unit" BDD of valid parameters:
         for (r in network.regulations) {
             val pairs = params.regulationPairs(r.regulator, r.target).map { (off, on) ->
@@ -48,8 +101,9 @@ class BDDSolver(
                 result = result uAnd constraint
             }
         }
-        println("Unit BDD size: ${result.nodeSize()} and cardinality ${result.cardinality()}")
-        result
+        println("[New] Unit BDD size: ${result.nodeSize()} and cardinality ${result.cardinality()}")
+        println("[New] Redundant variables: ${universe.determinedVars(result)}")
+        unit = result
     }
 
     inline fun List<BDDSet>.merge(action: (BDDSet, BDDSet) -> BDDSet): BDDSet {

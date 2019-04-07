@@ -123,55 +123,6 @@ object Network {
         Slp1 inhibits Cdc2A
     }
 
-    val FissionYeast2008NotObservable = network {
-        val start = specie("start")
-        val SK = specie("SK")
-        val Ste9 = specie("Ste9")
-        val Rum1 = specie("Rum1")
-        val Cdc2 = specie("Cdc2")
-        val Cdc25 = specie("Cdc25")
-        val PP = specie("PP")
-        val Slp1 = specie("Slp1")
-        val Wee1 = specie("Wee1")
-        val Cdc2A = specie("Cdc2A")
-
-        start maybeActivates SK
-
-        Cdc2 maybeInhibits Ste9
-        PP maybeActivates Ste9
-        SK maybeInhibits Ste9
-        Ste9 maybeActivates Ste9
-        Cdc2A maybeInhibits Ste9
-
-        Cdc2 maybeInhibits Rum1
-        PP maybeActivates Rum1
-        SK maybeInhibits Rum1
-        Rum1 maybeActivates Rum1
-        Cdc2A maybeInhibits Rum1
-
-        Ste9 maybeInhibits Cdc2
-        Rum1 maybeInhibits Cdc2
-        Slp1 maybeInhibits Cdc2
-
-        Cdc2 maybeActivates Cdc25
-        Cdc25 maybeActivates Cdc25
-        PP maybeInhibits Cdc25
-
-        Slp1 maybeActivates PP
-
-        Cdc2A maybeActivates Slp1
-
-        Cdc2 maybeInhibits Wee1
-        PP maybeActivates Wee1
-        Wee1 maybeActivates Wee1
-
-        Cdc25 maybeActivates Cdc2A
-        Wee1 maybeInhibits Cdc2A
-        Ste9 maybeInhibits Cdc2A
-        Rum1 maybeInhibits Cdc2A
-        Slp1 maybeInhibits Cdc2A
-    }
-
     // #P = 195, |P| = 8.04e21
     val ErbB2 = network {
         val EGF = specie("EGF")
