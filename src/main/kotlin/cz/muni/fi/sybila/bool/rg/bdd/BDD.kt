@@ -124,6 +124,7 @@ class BDDWorker(
     }
 
     fun cardinality(a: BDD): Double {
+        if (a.isZero()) return 0.0
         // this is rather wasteful, but at this point computing cardinality is not a bottleneck so we keep it as is.
         val cache = DoubleArray(a.size) { -1.0 }
         cache[0] = 0.0; cache[1] = 1.0

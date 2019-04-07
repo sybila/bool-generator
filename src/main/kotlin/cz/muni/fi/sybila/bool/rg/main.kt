@@ -2,6 +2,7 @@ package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.BooleanNetwork.Effect.*
 import cz.muni.fi.sybila.bool.rg.map.PairMap
+import kotlin.system.exitProcess
 
 fun main() {
 
@@ -13,17 +14,20 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.FissionYeast2008
+    val network = Network.G2A
 
     val states = BooleanStateEncoder(network)
+    val params = BooleanParamEncoder(network)
     val solver = BDDSolver(network)
     println("Solver ready!")
     val graph = ColouredGraph(network, solver)
 
+    val classifier = Classifier(solver, states)
     val start = System.currentTimeMillis()
     solver.run {
         graph.findComponents { component ->
             println("Component: ${component.size}")
+            classifier.push(component)
             /*component.forEach { (s, p) ->
                 println("State ${states.decode(s).toList()} for ${p.cardinality()} valuations")
             }*/
@@ -34,7 +38,13 @@ fun main() {
     println("Elapsed: ${elapsed}s")
     println("Ops: ${solver.BDDops}")
 
-    println("PairMap: ${PairMap.tableResize} ${PairMap.newBlock} ${PairMap.resizeBlock}")
+    classifier.print()
+    val tree = DecisionTree(params.parameterCount, classifier.export(), solver)
+    //println("Tree size: ${tree.learn()}")
+    val classes = classifier.export()
+    for (cls in classes.keys) {
+        println("Class $cls, tree: ${DecisionTree(params.parameterCount, classes.joinToClass(cls, solver), solver).learn()}")
+    }
     pool.shutdownNow()
 
 }

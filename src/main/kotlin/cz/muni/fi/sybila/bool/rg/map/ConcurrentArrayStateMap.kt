@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReferenceArray
 
 class ConcurrentArrayStateMap(
-        capacity: Int, private val solver: BDDSolver
+        val capacity: Int, private val solver: BDDSolver
 ) {
 
     private val sizeAtomic = AtomicInteger(0)

@@ -29,6 +29,10 @@ class BDDSolver(
     val empty: BDDSet
     val unit: BDDSet
 
+    val variables: Int
+    val fixedOne: List<Int>
+    val fixedZero: List<Int>
+
     init {
         val fullWorker = BDDWorker(params.parameterCount)
         var result = fullWorker.one
@@ -65,6 +69,8 @@ class BDDSolver(
         println("Unit BDD size: ${fullWorker.nodeCount(result)} and cardinality ${fullWorker.cardinality(result)}")
         println("Redundant variables: ${fullWorker.determinedVars(result)}")
         val (zeroes, ones) = fullWorker.determinedVars(result)
+        fixedOne = ones.sorted()
+        fixedZero = zeroes.sorted()
 
         threadUniverse = ThreadLocal.withInitial {
             BDDWorker(params.parameterCount - zeroes.size - ones.size)
@@ -89,6 +95,7 @@ class BDDSolver(
 
         // Compute unit over reduced BDDs:
         result = universe.one
+        variables = params.parameterCount - ones.size - zeroes.size
         println("Num. parameters: ${params.parameterCount - ones.size - zeroes.size}")
         // Compute the "unit" BDD of valid parameters:
         for (r in network.regulations) {
@@ -122,10 +129,10 @@ class BDDSolver(
     }
 
     // unsafe operations are needed to compute unit BDD
-    private infix fun BDDSet.uAnd(that: BDDSet): BDDSet = universe.and(this, that)
-    private infix fun BDDSet.uImp(that: BDDSet): BDDSet = universe.imp(this, that)
-    private infix fun BDDSet.uBiImp(that: BDDSet): BDDSet = universe.biImp(this, that)
-    private fun BDDSet.uNot(): BDDSet = universe.not(this)
+    infix fun BDDSet.uAnd(that: BDDSet): BDDSet = universe.and(this, that)
+    infix fun BDDSet.uImp(that: BDDSet): BDDSet = universe.imp(this, that)
+    infix fun BDDSet.uBiImp(that: BDDSet): BDDSet = universe.biImp(this, that)
+    fun BDDSet.uNot(): BDDSet = universe.not(this)
 
     infix fun BDDSet.subset(that: BDDSet): Boolean {
         BDDops += 1
@@ -152,6 +159,7 @@ class BDDSolver(
 
     fun BDDSet.cardinality(): Double = universe.satCount(this)
     fun BDDSet.nodeSize(): Int = universe.nodeCount(this)
+    fun BDDSet.printDot(name: String) = universe.printDot(this, name)
     //fun BDDSet.print() = universe.printSet(pointer)
     //fun memory() = universe.memoryUsage
 
@@ -162,5 +170,8 @@ class BDDSolver(
         return (if (!isActive) parameterVarNames else parameterNotVarNames)[parameterIndex]
         //return parameterVarNames[parameterIndex].let { if (!isActive) it else it.not() }
     }
+
+    fun variable(v: Int) = parameterVarNames[v]
+    fun variableNot(v: Int) = parameterNotVarNames[v]
 
 }

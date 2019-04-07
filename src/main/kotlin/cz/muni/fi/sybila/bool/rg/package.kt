@@ -44,3 +44,9 @@ fun ExecutorService.parallel(action: () -> Unit) {
         pool.submit(action)
     }.map { it.get() }
 }
+
+fun <T, R> List<T>.mapParallel(action: (T) -> R): List<R> {
+    return this.map {
+        pool.submit<R> { action(it) }
+    }.map { it.get() }
+}

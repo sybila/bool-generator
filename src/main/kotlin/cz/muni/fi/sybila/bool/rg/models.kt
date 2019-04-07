@@ -71,7 +71,7 @@ object Network {
 
         CtrA inhibits GcrA
         DnaA activates GcrA
-
+/*
         GcrA given listOf(DnaA)
 
         CtrA given listOf(CtrA)
@@ -83,6 +83,7 @@ object Network {
         CcrM given listOf(CtrA)
 
         DnaA given listOf(CtrA, CcrM)
+ */
     }
 
     // #P = 127, |P| = 4.77e14
