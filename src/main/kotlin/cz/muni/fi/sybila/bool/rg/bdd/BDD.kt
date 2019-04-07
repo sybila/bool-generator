@@ -59,14 +59,7 @@ class BDDWorker(
 
     fun imp(a: BDD, b: BDD) = apply(a, b) { i, j -> if (i == 0) 1 else j }
 
-    fun biImp(a: BDD, b: BDD): BDD {
-        try {
-            return apply(a, b) { i, j -> if (i == j) 1 else 0 }
-        } catch (e: Exception) {
-            println("Error: ${a.toList()} ${b.toList()}")
-            throw e
-        }
-    }
+    fun biImp(a: BDD, b: BDD): BDD = apply(a, b) { i, j -> if (i == j) 1 else 0 }
 
     fun not(a: BDD) = negation(a)
     fun isUnit(a: BDD): Boolean = a.isOne()
@@ -331,10 +324,10 @@ class BDDWorker(
         triples.keys.forEach { triplesCache.add(it) }
         triples.clear()
 
-        if (workEnd > maxSize) {
+        /*if (workEnd > maxSize) {
             println("Max BDD size: $workEnd")
             maxSize = workEnd
-        }
+        }*/
 
         return when {
             isZero -> {

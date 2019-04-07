@@ -2,6 +2,7 @@ package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
 import cz.muni.fi.sybila.bool.rg.parallel.ConcurrentStateQueue
+import cz.muni.fi.sybila.bool.rg.parallel.RepeatingConcurrentStateQueue
 import cz.muni.fi.sybila.bool.rg.parallel.StateQueue
 import java.util.*
 import kotlin.collections.ArrayList
@@ -20,7 +21,7 @@ class ColouredGraph(
     private fun newMap(): StateMap = StateMap(stateCount, solver)
 
     private fun StateMap.reachForward(guard: StateMap? = null): StateMap {
-        var shouldUpdate = ConcurrentStateQueue(stateCount)
+        val shouldUpdate = RepeatingConcurrentStateQueue(stateCount)
         val result = newMap()
         // init reach
         for (s in 0 until stateCount) {
@@ -30,18 +31,12 @@ class ColouredGraph(
                 shouldUpdate.set(s)
             }
         }
+        println("Start reach forward.")
         // repeat
-        while (!shouldUpdate.isEmpty) {
-            val next = ConcurrentStateQueue(stateCount)
-            println("Wave: ${shouldUpdate.unsafeSize()}")
-            pool.parallel {
-                var state = shouldUpdate.next()
-                var i = 0
+        pool.parallel {
+            var state = shouldUpdate.next(0)
+            while (state > -1) {
                 while (state > -1) {
-                    i += 1
-                    if (i % 100 == 0) {
-                        println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
-                    }
                     // go through all neighbours
                     for (d in 0 until dimensions) {
                         solver.run {
@@ -54,17 +49,14 @@ class ColouredGraph(
                             // update target -> if changed, mark it as working
                             val changed = result.union(target, edgeParams and bound)
                             if (changed) {
-                                next.set(target)
+                                shouldUpdate.set(target)
                             }
                         }
                     }
-                    // mark state as done
-                    //shouldUpdate.clear(state)
-                    // load next state
-                    state = shouldUpdate.next()
+                    state = shouldUpdate.next(state + 1)
                 }
+                state = shouldUpdate.next(0)
             }
-            shouldUpdate = next
         }
 
         return result
@@ -80,7 +72,7 @@ class ColouredGraph(
     }
 
     private fun StateMap.reachBackward(guard: StateMap? = null): StateMap {
-        var shouldUpdate = ConcurrentStateQueue(stateCount)
+        val shouldUpdate = RepeatingConcurrentStateQueue(stateCount)
         val result = newMap()
         // init reach
         for (s in 0 until stateCount) {
@@ -90,18 +82,12 @@ class ColouredGraph(
                 shouldUpdate.set(s)
             }
         }
+        println("Start reach backward.")
         // repeat
-        while (!shouldUpdate.isEmpty) {
-            val next = ConcurrentStateQueue(stateCount)
-            println("Wave: ${shouldUpdate.unsafeSize()}")
-            pool.parallel {
-                var state = shouldUpdate.next()
-                var i = 0
+        pool.parallel {
+            var state = shouldUpdate.next(0)
+            while (state > -1) {
                 while (state > -1) {
-                    i += 1
-                    if (i % 100 == 0) {
-                        println("Iterator: $state (Mem: ${Runtime.getRuntime().freeMemory()}/${Runtime.getRuntime().maxMemory()})")
-                    }
                     // go through all neighbours
                     for (d in 0 until dimensions) {
                         solver.run {
@@ -114,17 +100,15 @@ class ColouredGraph(
                             // update target -> if changed, mark it as working
                             val changed = result.union(source, edgeParams and bound)
                             if (changed) {
-                                next.set(source)
+                                shouldUpdate.set(source)
                             }
                         }
                     }
-                    // mark state as done
-                    //shouldUpdate.clear(state)
-                    // load next state
-                    state = shouldUpdate.next()
+                    state = shouldUpdate.next(state + 1)
                 }
+                // double check - maybe someone added another thing
+                state = shouldUpdate.next(0)
             }
-            shouldUpdate = next
         }
 
         return result
