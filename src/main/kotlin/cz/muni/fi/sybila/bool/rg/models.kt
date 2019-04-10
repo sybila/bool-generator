@@ -162,7 +162,7 @@ object Network {
 
         Cdc2A given listOf(Cdc25)
 
-        Cdc25 given listOf(Cdc2)
+        //Cdc25 given listOf(Cdc2)
         Cdc25 given listOf(Cdc25)
         //redundant Cdc25 given listOf(Cdc2, Cdc25)
         Cdc25 given listOf(Cdc2, Cdc25, PP)
