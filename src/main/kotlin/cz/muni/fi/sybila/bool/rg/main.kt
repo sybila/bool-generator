@@ -14,7 +14,7 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.FissionYeast2008
+    val network = model
 
     val states = BooleanStateEncoder(network)
     val params = BooleanParamEncoder(network)

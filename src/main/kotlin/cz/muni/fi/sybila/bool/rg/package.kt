@@ -1,11 +1,9 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.bdd.BDD
-import cz.muni.fi.sybila.bool.rg.map.ArrayStateMap
 import cz.muni.fi.sybila.bool.rg.map.ConcurrentArrayStateMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
 
 // The bit vector of values in the state
 typealias State = Int
@@ -36,7 +34,9 @@ inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
     return result
 }
 
+val model = Network.G2A
 val parallelism = Runtime.getRuntime().availableProcessors() / 2
+val exact = true
 val pool: ExecutorService = Executors.newFixedThreadPool(parallelism)
 
 fun ExecutorService.parallel(action: () -> Unit) {

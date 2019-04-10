@@ -1,8 +1,6 @@
 package cz.muni.fi.sybila.bool.rg
 
-import java.lang.Exception
 import kotlin.math.log2
-import kotlin.system.exitProcess
 
 
 class DecisionTree(
@@ -73,14 +71,14 @@ class DecisionTree(
                 val imp = solver.run { variable(p2) uImp variable(p1) }
                 solver.run { Attribute(imp, imp.uNot(), "$p1 >= $p2") }
             }
-        })*//* + (params).flatMap { p1 ->
+        })*/ + (params).flatMap { p1 ->
             (params).map { p2 ->
                 if (p1 <= p2) null else {
                     val eq = solver.run { variable(p1) uBiImp variable(p2) }
                     solver.run { Attribute(eq,  eq.uNot(), "$p1 = $p2") }
                 }
             }.filterNotNull()
-        }*//* + (params).flatMap { p1 ->
+        }/* + (params).flatMap { p1 ->
             (params).map { p2 ->
                 if (p1 <= p2) null else {
                     val both = solver.run {variable(p1) and variable(p2) }
@@ -125,26 +123,27 @@ class DecisionTree(
             if (dataSet.size <= 1) {
                 //println("Make leaf!")
                 remaining -= dataSet.values.iterator().next().s.cardinality()
-                //println("Remaining: $remaining")
+                println("Remaining: $remaining")
                 return Result.Leaf(dataSet.keys.iterator().next())
             }
-            val all = dataSet.values.fold(empty) { a, b -> a or b.s }
-            for ((k, p) in dataSet) {
-                val proportion = (p.s.cardinality() / all.cardinality())
-                if (proportion > 0.95) {
-                   // println("Skip - make leaf")
-                    remaining -= dataSet.values.iterator().next().s.cardinality()
-                    //println("Remaining: $remaining")
-                    return Result.Leaf(k)
+            if (!exact) {
+                val all = dataSet.values.fold(empty) { a, b -> a or b.s }
+                for ((k, p) in dataSet) {
+                    val proportion = (p.s.cardinality() / all.cardinality())
+                    if (proportion > 0.95) {
+                        // println("Skip - make leaf")
+                        remaining -= dataSet.values.iterator().next().s.cardinality()
+                        //println("Remaining: $remaining")
+                        return Result.Leaf(k)
+                    }
                 }
             }
             var maxGain = Double.NEGATIVE_INFINITY
             var maxVar: Attribute? = null
             val gains = attributes.toList().mapParallel { v ->
-                val gain = dataSet.entropy() - (
-                        0.5 * dataSet.applyAttribute(v.positive).entropy() +
-                                0.5 * dataSet.applyAttribute(v.negative).entropy()
-                        )
+                val p = dataSet.applyAttribute(v.positive)
+                val n = dataSet.applyAttribute(v.negative)
+                val gain = dataSet.entropy() - (0.5 * p.entropy() + 0.5 * n.entropy())
                 v to gain
             }
             for ((v, gain) in gains) {
