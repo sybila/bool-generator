@@ -139,7 +139,7 @@ class ColouredGraph(
         // First, detect all sinks - this will prune A LOT of state space...
         val sinks = newMap()
         println("Detecting sinks!")
-        for (s in 0 until stateCount) {
+        (0 until stateCount).toList().mapParallel { s ->
             val hasNext = (0 until dimensions)
                     .map { d -> solver.transitionParams(s, d) }
                     .merge { a, b -> a or b }
