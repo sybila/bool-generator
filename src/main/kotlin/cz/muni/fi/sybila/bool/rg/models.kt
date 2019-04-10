@@ -144,7 +144,7 @@ object Network {
         Ste9 given listOf(PP, Cdc2, Ste9)
         Ste9 given listOf(PP, Cdc2A, Ste9)
 
-        Rum1 given listOf(PP)
+        //Rum1 given listOf(PP)
         Rum1 given listOf(Rum1)
         //redundant Rum1 given listOf(PP, Rum1)
         Rum1 given listOf(PP, SK, Rum1)

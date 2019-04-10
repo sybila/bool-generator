@@ -34,7 +34,7 @@ inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
     return result
 }
 
-val model = Network.G2A
+val model = Network.FissionYeast2008
 val parallelism = Runtime.getRuntime().availableProcessors() / 2
 val exact = true
 val pool: ExecutorService = Executors.newFixedThreadPool(parallelism)
