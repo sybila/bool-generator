@@ -62,6 +62,7 @@ class DecisionTree(
     }
 
     fun learn(): Int {
+        println("Filtering attributes...")
         val params = (0 until parameters) - solver.fixedOne - solver.fixedZero
         val attributes: List<Attribute> = (params).map {
             Attribute(solver.variable(it), solver.variableNot(it), "$it")
@@ -91,14 +92,14 @@ class DecisionTree(
                 Attribute(prop.uNot(), prop, "$a != $b")
             }
         }*/
-        //println("Attributes: ${attributes.size}")
-        return (this.originalClasses.learn(attributes.filter {
+        println("Attributes: ${attributes.size}")
+        return (this.originalClasses.learn(attributes.mapParallel {
             val gain = originalClasses.entropy() - (
                     0.5 * originalClasses.applyAttribute(it.positive).entropy() +
-                    0.5 * originalClasses.applyAttribute(it.negative).entropy()
-            )
-            gain > Double.NEGATIVE_INFINITY
-        }.toSet()) as? Result.Decision)?.size ?: 0
+                            0.5 * originalClasses.applyAttribute(it.negative).entropy()
+                    )
+            if (gain > Double.NEGATIVE_INFINITY) it else null
+        }.filterNotNull().toSet()) as? Result.Decision)?.size ?: 0
     }
 
     sealed class Result() {
