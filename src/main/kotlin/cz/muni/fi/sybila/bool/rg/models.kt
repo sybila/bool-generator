@@ -391,6 +391,71 @@ object Network {
 
         Cdc20 inhibits CycB
         Cdh1 inhibits CycB
+
+        CycE given listOf(E2F)
+        CycE given listOf(E2F, CycA)
+        CycE given listOf(E2F, CycE)
+        CycE given listOf(E2F, CycE, CycA)
+        CycE given listOf(E2F, P27)
+        CycE given listOf(CycA, E2F, P27)
+        CycE given listOf(CycE, CycA, E2F, P27)
+        CycE given listOf(CycE, P27, E2F)
+
+        P27 given listOf(P27)
+        P27 given listOf(P27, CycE)
+        P27 given listOf(P27, CycA)
+
+        E2F given listOf(CycA, P27)
+        E2F given listOf(P27)
+
+        Rb given listOf(CycA, P27)
+        Rb given listOf(CycE, P27)
+        Rb given listOf(CycA, CycE, P27)
+        Rb given listOf(P27)
+
+        Cdc20 given listOf(CycB)
+        Cdc20 given listOf(CycB, Cdh1)
+
+        UbcH10 given listOf(CycA)
+        UbcH10 given listOf(CycB)
+        UbcH10 given listOf(Cdc20)
+        UbcH10 given listOf(UbcH10)
+        UbcH10 given listOf(CycA, CycB)
+        UbcH10 given listOf(CycB, Cdc20)
+        UbcH10 given listOf(CycA, Cdc20)
+        UbcH10 given listOf(CycA, CycB, Cdc20)
+        UbcH10 given listOf(UbcH10, Cdc20)
+        UbcH10 given listOf(CycA, CycB, UbcH10)
+        UbcH10 given listOf(CycB, UbcH10, Cdc20)
+        UbcH10 given listOf(CycA, UbcH10, Cdc20)
+        UbcH10 given listOf(CycA, CycB, UbcH10, Cdc20)
+        UbcH10 given listOf(CycA, Cdh1, UbcH10)
+        UbcH10 given listOf(CycB, Cdh1, UbcH10)
+        UbcH10 given listOf(CycA, CycB, Cdh1, UbcH10)
+        UbcH10 given listOf(CycB, Cdh1, UbcH10, Cdc20)
+        UbcH10 given listOf(CycA, Cdh1, UbcH10, Cdc20)
+        UbcH10 given listOf(CycA, CycB, Cdh1, UbcH10, Cdc20)
+
+        Cdh1 given listOf(Cdc20)
+        Cdh1 given listOf(Cdc20, CycB)
+        Cdh1 given listOf(Cdc20, CycA)
+        Cdh1 given listOf(Cdc20, CycA, CycB)
+        Cdh1 given listOf(Cdc20, P27)
+        Cdh1 given listOf(CycB, Cdc20, P27)
+        Cdh1 given listOf(CycA, Cdc20, P27)
+        Cdh1 given listOf(CycA, CycB, Cdc20, P27)
+        Cdh1 given listOf(CycA, P27)
+        Cdh1 given listOf(P27)
+
+        CycA given listOf(E2F)
+        CycA given listOf(E2F, CycA)
+        CycA given listOf(E2F, Cdh1)
+        CycA given listOf(CycA, E2F, Cdh1)
+        CycA given listOf(E2F, UbcH10)
+        CycA given listOf(CycA, UbcH10)
+        CycA given listOf(CycA, E2F, UbcH10)
+        CycA given listOf(CycA)
+        CycA given listOf(CycA, Cdh1)
     }
 
     // Too small

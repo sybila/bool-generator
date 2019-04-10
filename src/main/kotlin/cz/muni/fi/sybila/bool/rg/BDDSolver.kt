@@ -49,19 +49,19 @@ class BDDSolver(
             }
             if (r.observable) {
                 val constraint = pairs
-                        .map { (off, on) -> fullWorker.biImp(off, on) }
+                        .map { (off, on) -> fullWorker.and(restrictedOnes, fullWorker.biImp(off, on)) }
                         .merge { a, b -> fullWorker.and(a, b) }
                 result = fullWorker.and(result, fullWorker.not(constraint))
             }
             if (r.effect == BooleanNetwork.Effect.ACTIVATION) {
                 val constraint = pairs
-                        .map { (off, on) -> fullWorker.imp(off, on) }
+                        .map { (off, on) -> fullWorker.and(restrictedOnes, fullWorker.imp(off, on)) }
                         .merge { a, b -> fullWorker.and(a, b) }
                 result = fullWorker.and(result, constraint)
             }
             if (r.effect == BooleanNetwork.Effect.INHIBITION) {
                 val constraint = pairs
-                        .map { (off, on) -> fullWorker.imp(on, off) }
+                        .map { (off, on) -> fullWorker.and(restrictedOnes, fullWorker.imp(on, off)) }
                         .merge { a, b -> fullWorker.and(a, b) }
                 result = fullWorker.and(result, constraint)
             }
