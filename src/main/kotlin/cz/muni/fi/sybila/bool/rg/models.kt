@@ -330,6 +330,67 @@ object Network {
         Rux inhibits Fzy
         CycB activates Fzy
 
+        CycE given listOf(E2F)
+        CycE given listOf(E2F, Ago)
+        CycE given listOf(E2F, Dap)
+
+        Dap given listOf(CycE)
+        Dap given listOf(Notch, CycE)
+
+        Rb given listOf(Rux)
+        Rb given listOf(Rux, CycA)
+        Rb given listOf(Rux, CycB)
+        Rb given listOf(Rux, CycA, CycB)
+
+        CycA given listOf(E2F)
+
+        E2F given listOf(Rux)
+        E2F given listOf(Rux, CycA)
+        E2F given listOf(Rux, CycB)
+        E2F given listOf(Rux, CycA, CycB)
+
+        Rux given listOf(Rux)
+        Rux given listOf(Rux, CycA)
+        Rux given listOf(Rux, CycB)
+        //Rux given listOf(CycE)
+        //Rux given listOf(Rux, CycE)
+        //Rux given listOf(Rux, CycA, CycE)
+        //Rux given listOf(Rux, CycB, CycE)
+        //Rux given listOf(CycD)
+        //Rux given listOf(Rux, CycD)
+        //Rux given listOf(Rux, CycA, CycD)
+        //Rux given listOf(Rux, CycB, CycD)
+
+        Wee given listOf(Rux)
+        Wee given listOf(Rux, CycB)
+
+        Fzy given listOf(CycB)
+
+        Stg given listOf(E2F)
+        Stg given listOf(E2F, Rux)
+        Stg given listOf(E2F, CycB)
+        Stg given listOf(E2F, CycB, Rux)
+        Stg given listOf(CycB)
+        Stg given listOf(CycB, Rb)
+        Stg given listOf(E2F, CycB, Rb)
+
+        CycB given listOf(Stg)
+        CycB given listOf(Wee, Stg)
+
+        Fzr given listOf(Rux)
+        Fzr given listOf(Rux, CycA)
+        Fzr given listOf(Rux, CycB)
+        Fzr given listOf(Rux, CycA, CycB)
+        Fzr given listOf(Notch)
+        Fzr given listOf(Notch, Rux)
+        Fzr given listOf(Notch, Rux, CycA)
+        Fzr given listOf(Notch, Rux, CycB)
+        Fzr given listOf(Notch, Rux, CycA, CycB)
+        Fzr given listOf(Notch, CycE)
+        Fzr given listOf(Notch, CycE, Rux)
+        Fzr given listOf(Notch, CycE, Rux, CycA)
+        Fzr given listOf(Notch, CycE, Rux, CycB)
+        Fzr given listOf(Notch, CycE, CycB, CycA, Rux)
     }
 
     // #P = 233, |P| = ???
