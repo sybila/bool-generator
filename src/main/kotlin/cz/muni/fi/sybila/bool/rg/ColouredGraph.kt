@@ -248,28 +248,26 @@ class ColouredGraph(
     }
 
     private fun allColours(map: StateMap): BDDSet = solver.run {
-        var result = empty
-        for (s in 0 until stateCount) {
-            val c = map.getOrNull(s)
-            if (c != null) result = result or c
+        val list = (0 until stateCount)
+                .mapNotNull { map.getOrNull(it) }
+        return if (list.isEmpty()) empty else {
+            list.merge { a, b -> a or b }
         }
-        result
     }
 
     private fun findPivots(map: StateMap): StateMap = solver.run {
         val result = newMap()
         var toCover = allColours(map)
+        var remaining = (0 until stateCount)
+                .mapNotNull { s -> map.getOrNull(s)?.let { s to (it) } }
         while (toCover.isNotEmpty()) {
-            for (s in 0 until stateCount) {
-                val c = map.getOrNull(s)
-                if (c != null) {
-                    val gain = c and toCover
-                    if (gain.isNotEmpty()) {
-                        result.union(s, gain)
-                        toCover = toCover and gain.not()
-                    }
-                }
-            }
+            // there must be a gain in the first element of remaining because we remove all empty elements
+            val (s, gain) = remaining.first().let { (s, p) -> s to (p and toCover) }
+            toCover = toCover and gain.not()
+            result.union(s, gain)
+            remaining = remaining.mapParallel { (s, p) ->
+                (s to (p and toCover)).takeIf { it.second.isNotEmpty() }
+            }.filterNotNull()
         }
         result
     }

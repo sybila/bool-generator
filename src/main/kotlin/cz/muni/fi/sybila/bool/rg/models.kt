@@ -258,6 +258,113 @@ object Network {
         EGF activates ERBB1
         EGF activates ERBB2
         EGF activates ERBB3
+
+        ERBB1 given listOf(EGF)
+
+        ERBB2 given listOf(EGF)
+
+        ERBB3 given listOf(EGF)
+
+        ERBB1_2 given listOf(ERBB1, ERBB2)
+        ERBB1_3 given listOf(ERBB1, ERBB3)
+        ERBB2_3 given listOf(ERBB2, ERBB3)
+
+        IGF1R given listOf(ERalpha)
+        IGF1R given listOf(AKT1)
+        IGF1R given listOf(ERalpha, AKT1)
+
+        AKT1 given listOf(IGF1R)
+        AKT1 given listOf(IGF1R, ERBB2_3)
+        AKT1 given listOf(ERBB1)
+        AKT1 given listOf(ERBB1_2)
+        AKT1 given listOf(ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB2_3)
+        AKT1 given listOf(IGF1R, ERBB1)
+        AKT1 given listOf(IGF1R, ERBB1_2)
+        AKT1 given listOf(IGF1R, ERBB1_3)
+        AKT1 given listOf(ERBB2_3, ERBB1)
+        AKT1 given listOf(ERBB2_3, ERBB1_2)
+        AKT1 given listOf(ERBB2_3, ERBB1_3)
+        AKT1 given listOf(ERBB1, ERBB1_2)
+        AKT1 given listOf(ERBB1, ERBB1_3)
+        AKT1 given listOf(ERBB1_2, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB2_3, ERBB1)
+        AKT1 given listOf(IGF1R, ERBB2_3, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB2_3, ERBB1_2)
+        AKT1 given listOf(ERBB2_3, ERBB1_2, ERBB1_3)
+        AKT1 given listOf(ERBB1, ERBB1_2, ERBB1_3)
+        AKT1 given listOf(ERBB1, ERBB2_3, ERBB1_2)
+        AKT1 given listOf(IGF1R, ERBB1, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB1, ERBB1_2)
+        AKT1 given listOf(IGF1R, ERBB1_2, ERBB1_3)
+        AKT1 given listOf(ERBB1, ERBB2_3, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB1, ERBB2_3, ERBB1_2)
+        AKT1 given listOf(ERBB2_3, ERBB1, ERBB1_2, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB1, ERBB1_2, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB2_3, ERBB1, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB2_3, ERBB1_2, ERBB1_3)
+        AKT1 given listOf(IGF1R, ERBB2_3, ERBB1, ERBB1_2, ERBB1_3)
+
+        MEK1 given listOf(IGF1R)
+        MEK1 given listOf(ERBB2_3)
+        MEK1 given listOf(ERBB1)
+        MEK1 given listOf(ERBB1_2)
+        MEK1 given listOf(ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB2_3)
+        MEK1 given listOf(IGF1R, ERBB1)
+        MEK1 given listOf(IGF1R, ERBB1_2)
+        MEK1 given listOf(IGF1R, ERBB1_3)
+        MEK1 given listOf(ERBB2_3, ERBB1)
+        MEK1 given listOf(ERBB2_3, ERBB1_2)
+        MEK1 given listOf(ERBB2_3, ERBB1_3)
+        MEK1 given listOf(ERBB1, ERBB1_2)
+        MEK1 given listOf(ERBB1, ERBB1_3)
+        MEK1 given listOf(ERBB1_2, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB2_3, ERBB1)
+        MEK1 given listOf(ERBB2_3, ERBB1, ERBB1_2)
+        MEK1 given listOf(ERBB1, ERBB1_2, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB1, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB1_2, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB1, ERBB1_2)
+        MEK1 given listOf(ERBB2_3, ERBB1_2, ERBB1_3)
+        MEK1 given listOf(ERBB2_3, ERBB1, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB2_3, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB2_3, ERBB1_2)
+        MEK1 given listOf(IGF1R, ERBB1, ERBB2_3, ERBB1_2)
+        MEK1 given listOf(ERBB1, ERBB2_3, ERBB1_2, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB1, ERBB1_2, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB2_3, ERBB1_2, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB2_3, ERBB1, ERBB1_3)
+        MEK1 given listOf(IGF1R, ERBB2_3, ERBB1, ERBB1_2, ERBB1_3)
+
+        MYC given listOf(MEK1)
+        MYC given listOf(AKT1)
+        MYC given listOf(ERalpha)
+        MYC given listOf(MEK1, AKT1)
+        MYC given listOf(AKT1, ERalpha)
+        MYC given listOf(MEK1, ERalpha)
+        MYC given listOf(MEK1, AKT1, ERalpha)
+
+        ERalpha given listOf(MEK1)
+        ERalpha given listOf(AKT1)
+        ERalpha given listOf(MEK1, AKT1)
+
+        CyclinD1 given listOf(ERalpha, MYC, MEK1)
+        CyclinD1 given listOf(ERalpha, MYC, AKT1)
+        CyclinD1 given listOf(ERalpha, MYC, MEK1, AKT1)
+
+        P27 given listOf(ERalpha)
+
+        P21 given listOf(ERalpha)
+
+        CyclinE1 given listOf(MYC)
+
+        CDK4 given listOf(CyclinD1)
+        CDK6 given listOf(CyclinD1)
+        CDK2 given listOf(CyclinE1)
+
+        pRB1 given listOf(CDK4, CDK6, CDK2)
+        pRB1 given listOf(CDK4, CDK6)
     }
 
     // #P = 207, |P| = 2.44e25
