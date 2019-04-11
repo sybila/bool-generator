@@ -57,23 +57,25 @@ class Classifier(
 
             // now detect cycles in the union
             val disorder = (0 until component.capacity).toList().mapParallel { s ->
-                var oneSuccessor = component.get(s) and notSinkParams
-                val successorParams = (0 until states.dimensions).map { d ->
-                    val successor = states.flipValue(s, d)
-                    component.get(s) and component.get(successor) and notSinkParams and transitionParams(s, d)
-                }
+                if (component.get(s).isEmpty()) empty else {
+                    var oneSuccessor = component.get(s) and notSinkParams
+                    val successorParams = (0 until states.dimensions).map { d ->
+                        val successor = states.flipValue(s, d)
+                        component.get(s) and component.get(successor) and notSinkParams and transitionParams(s, d)
+                    }
 
-                for (d1 in 0 until states.dimensions) {
-                    val d1Successor = successorParams[d1]
-                    for (d2 in (d1+1) until states.dimensions) {
-                        val d2Successor = successorParams[d2]
-                        val hasBoth = d1Successor and d2Successor
-                        if (hasBoth.isNotEmpty()) {
-                            oneSuccessor = oneSuccessor and hasBoth.not()
+                    for (d1 in 0 until states.dimensions) {
+                        val d1Successor = successorParams[d1]
+                        for (d2 in (d1+1) until states.dimensions) {
+                            val d2Successor = successorParams[d2]
+                            val hasBoth = d1Successor and d2Successor
+                            if (hasBoth.isNotEmpty()) {
+                                oneSuccessor = oneSuccessor and hasBoth.not()
+                            }
                         }
                     }
+                    (oneSuccessor.not() and component.get(s) and notSinkParams)
                 }
-                (oneSuccessor.not() and component.get(s) and notSinkParams)
             }.merge { a, b -> a or b }
             /*var disorder = empty
             for (s in 0 until component.capacity) {
