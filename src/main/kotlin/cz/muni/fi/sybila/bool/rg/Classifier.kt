@@ -20,7 +20,25 @@ class Classifier(
 
     fun push(component: StateMap) {
         solver.run {
-            var notSinkParams = empty
+            val notSinkParams = (0 until component.capacity).map { it to component.get(it) }.mapParallel { (s, p) ->
+                try {
+                    var hasSuccessor = empty
+                    for (d in 0 until states.dimensions) {
+                        hasSuccessor = hasSuccessor or transitionParams(s, d)
+                    }
+                    val isSink = p and hasSuccessor.not()
+                    val isNotSink = p and hasSuccessor
+                    if (isSink.isNotEmpty()) {
+                        push("sink", isSink)
+                    }
+                    isNotSink
+                } catch (e: Exception) {
+                    println("Error $e")
+                    e.printStackTrace()
+                    throw e
+                }
+            }.merge { a, b -> a or b }
+            /*var notSinkParams = empty
             for (s in 0 until component.capacity) {
                 if (component.get(s).isEmpty()) continue
                 var hasSuccessor = empty
@@ -35,10 +53,26 @@ class Classifier(
                 if (isNotSink.isNotEmpty()) {
                     notSinkParams = notSinkParams or isNotSink
                 }
-            }
+            }*/
 
             // now detect cycles in the union
-            var disorder = empty
+            val disorder = (0 until component.capacity).toList().mapParallel { s ->
+                var oneSuccessor = component.get(s) and notSinkParams
+                for (d1 in 0 until states.dimensions) {
+                    val succ1 = states.flipValue(s, d1)
+                    val d1Successor = component.get(s) and component.get(succ1) and notSinkParams and transitionParams(s, d1)
+                    for (d2 in (d1+1) until states.dimensions) {
+                        val succ2 = states.flipValue(s, d2)
+                        val d2Successor = component.get(s) and component.get(succ2) and notSinkParams and transitionParams(s, d2)
+                        val hasBoth = d1Successor and d2Successor
+                        if (hasBoth.isNotEmpty()) {
+                            oneSuccessor = oneSuccessor and hasBoth.not()
+                        }
+                    }
+                }
+                (oneSuccessor.not() and component.get(s) and notSinkParams)
+            }.merge { a, b -> a or b }
+            /*var disorder = empty
             for (s in 0 until component.capacity) {
                 var oneSuccessor = component.get(s) and notSinkParams
                 for (d1 in 0 until states.dimensions) {
@@ -54,7 +88,7 @@ class Classifier(
                     }
                 }
                 disorder = disorder or (oneSuccessor.not() and component.get(s) and notSinkParams)
-            }
+            }*/
 
             push("disorder", disorder)
             push("cycle", (notSinkParams and disorder.not()))

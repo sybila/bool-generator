@@ -37,7 +37,7 @@ inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
 val model = Network.ErbB2
 val parallelism = Runtime.getRuntime().availableProcessors()
 val exact = true
-val pool: ExecutorService = Executors.newFixedThreadPool(parallelism)
+val pool: ExecutorService = Executors.newWorkStealingPool(parallelism)//.newFixedThreadPool(parallelism)
 
 fun ExecutorService.parallel(action: () -> Unit) {
     (1..parallelism).map {
