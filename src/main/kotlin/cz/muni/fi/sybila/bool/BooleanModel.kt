@@ -18,7 +18,7 @@ data class BooleanModel(
     constructor(parameterCount: Int, vararg variables: Variable) : this(parameterCount, variables.toList())
 
     init {
-        if (variables.size > 30) error("Model too big. Max. 30 variables supported, ${variables.size} given.")
+        if (variables.size > 31) error("Model too big. Max. 31 variables supported, ${variables.size} given.")
     }
 
     data class Variable(val name: String, val updateFunction: UpdateFunction)
