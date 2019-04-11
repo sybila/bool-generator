@@ -140,6 +140,7 @@ class ColouredGraph(
         val sinks = newMap()
         println("Detecting sinks!")
         (0 until stateCount).toList().mapParallel { s ->
+            if (s%10000 == 0) println("Sink progress $s/$stateCount")
             val hasNext = (0 until dimensions)
                     .map { d -> solver.transitionParams(s, d) }
                     .merge { a, b -> a or b }
