@@ -58,12 +58,15 @@ class Classifier(
             // now detect cycles in the union
             val disorder = (0 until component.capacity).toList().mapParallel { s ->
                 var oneSuccessor = component.get(s) and notSinkParams
+                val successorParams = (0 until states.dimensions).map { d ->
+                    val successor = states.flipValue(s, d)
+                    component.get(s) and component.get(successor) and notSinkParams and transitionParams(s, d)
+                }
+
                 for (d1 in 0 until states.dimensions) {
-                    val succ1 = states.flipValue(s, d1)
-                    val d1Successor = component.get(s) and component.get(succ1) and notSinkParams and transitionParams(s, d1)
+                    val d1Successor = successorParams[d1]
                     for (d2 in (d1+1) until states.dimensions) {
-                        val succ2 = states.flipValue(s, d2)
-                        val d2Successor = component.get(s) and component.get(succ2) and notSinkParams and transitionParams(s, d2)
+                        val d2Successor = successorParams[d2]
                         val hasBoth = d1Successor and d2Successor
                         if (hasBoth.isNotEmpty()) {
                             oneSuccessor = oneSuccessor and hasBoth.not()
