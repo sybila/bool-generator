@@ -116,22 +116,29 @@ class ColouredGraph(
 
     private fun StateMap.subtract(that: StateMap): StateMap {
         val result = newMap()
-        for (s in 0 until stateCount) {
-            val a = this.get(s)
-            val b = that.get(s)
-            val params = solver.run { a and b.not() }
-            result.union(s, params)
-        }
+        (0 until stateCount).toList()
+                .map { s -> Triple(s, this.get(s), that.get(s)) }
+                .mapParallel { (s, a, b) ->
+                    (s to solver.run { a and b.not() }).takeIf { it.second.isNotEmpty() }
+                }
+                .filterNotNull()
+                .forEach { (s, p) ->
+                    result.union(s, p)
+                }
         return result
     }
 
     private fun StateMap.invert(): StateMap {
         val result = newMap()
-        for (s in 0 until stateCount) {
-            val c = this.get(s)
-            val notC = solver.run { c.not() }
-            result.union(s, notC)
-        }
+        (0 until stateCount).toList()
+                .map { s -> s to get(s) }
+                .mapParallel { (s, c) ->
+                    (s to solver.run { c.not() }).takeIf { it.second.isNotEmpty() }
+                }
+                .filterNotNull()
+                .forEach { (s, p) ->
+                    result.union(s, p)
+                }
         return result
     }
 
@@ -239,12 +246,14 @@ class ColouredGraph(
 
     private fun StateMap.restrict(colours: BDDSet): StateMap {
         val result = newMap()
-        for (s in 0 until stateCount) {
-            val c = this.getOrNull(s)
-            if (c != null) {
-                result.union(s, solver.run { c and colours })
-            }
-        }
+        (0 until stateCount).toList()
+                .mapNotNull { s -> getOrNull(s)?.let { s to it } }
+                .mapParallel { (s, c) ->
+                    s to solver.run { c and colours }
+                }
+                .forEach { (s, p) ->
+                    result.union(s, p)
+                }
         return result
     }
 

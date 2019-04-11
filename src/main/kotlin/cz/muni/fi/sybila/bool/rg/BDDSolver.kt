@@ -120,7 +120,7 @@ class BDDSolver(
         unit = result
     }
 
-    inline fun List<BDDSet>.merge(action: (BDDSet, BDDSet) -> BDDSet): BDDSet {
+    inline fun List<BDDSet>.merge(crossinline action: (BDDSet, BDDSet) -> BDDSet): BDDSet {
         var items = this
         while (items.size > 1) {
             items = items.mergePairs(action)

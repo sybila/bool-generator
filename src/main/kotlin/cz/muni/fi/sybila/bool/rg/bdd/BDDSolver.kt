@@ -73,7 +73,7 @@ class BDDSolverOldAndUgly(
         result
     }
 
-    inline fun List<BDD>.merge(action: (BDD, BDD) -> BDD): BDD {
+    inline fun List<BDD>.merge(crossinline action: (BDD, BDD) -> BDD): BDD {
         var items = this
         while (items.size > 1) {
             items = items.mergePairs(action)
