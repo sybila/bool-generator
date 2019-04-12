@@ -3,11 +3,11 @@ package cz.muni.fi.sybila.bool
 import cz.muni.fi.sybila.bool.solver.BDD
 
 /**
- * Parametrised update function allows to specify the behaviour of the update function with respect to
+ * Parametrised union function allows to specify the behaviour of the union function with respect to
  * parameters.
  *
- * Standard update function always gives boolean true/false result. On the other hand, parametrised
- * update function returns a set of parameters for which the output of the function equals true.
+ * Standard union function always gives boolean true/false result. On the other hand, parametrised
+ * union function returns a set of parameters for which the output of the function equals true.
  *
  * If you need to obtain parameters for which the value is zero, simply negate the result of the function.
  *
@@ -19,7 +19,7 @@ import cz.muni.fi.sybila.bool.solver.BDD
  *
  * The function then takes a state index and returns the parameter set as described.
  *
- * For examples on how to write update functions directly in kotlin, see state space generator tests.
+ * For examples on how to write union functions directly in kotlin, see state space generator tests.
  */
 typealias UpdateFunction = BooleanContext.(Int) -> BDD
 

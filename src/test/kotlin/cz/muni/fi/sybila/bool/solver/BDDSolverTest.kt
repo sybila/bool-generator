@@ -51,18 +51,18 @@ class BDDSolverTest {
 
     @Test
     fun coloringTest() {
-        val solver = BDDSolver(4)
-        var byteBuffer: ByteBuffer = ByteBuffer.allocate(0)
-        solver.run {
-            val a = one(0).or(zero(1))
 
+        val donorSolver = BDDSolver(4)
+        var byteBuffer: ByteBuffer = ByteBuffer.allocate(0)
+        val recipientSolver = BDDSolver(4)
+
+        donorSolver.run {
+            val a = one(0).or(zero(1))
             byteBuffer = ByteBuffer.allocate(a.byteSize())
             byteBuffer.putColors(a)
         }
 
 
-
-        val recipientSolver = BDDSolver(4)
         recipientSolver.run {
             val b = byteBuffer.getColors()
 

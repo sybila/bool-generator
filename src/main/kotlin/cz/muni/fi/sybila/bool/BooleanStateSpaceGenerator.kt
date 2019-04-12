@@ -12,12 +12,12 @@ import kotlin.math.roundToInt
 
 /**
  * State space generator creates a parametrised transition system based on the given [model] (a boolean network
- * with parametrised update functions). Each transition has an associated parameter set and direction formula.
+ * with parametrised union functions). Each transition has an associated parameter set and direction formula.
  * The parameter set indicates for which parameters the transition is enabled, whereas the direction formula
  * indicates which variable is updated by the transition.
  *
- * The generator implements an asynchronous update scheme, meaning that in every step, at most one variable
- * can change and the choice of updated variable is non-deterministic. For parameters where update functions
+ * The generator implements an asynchronous union scheme, meaning that in every step, at most one variable
+ * can change and the choice of updated variable is non-deterministic. For parameters where union functions
  * for all variables do not change the current state, a self-loop should be created.
  *
  * The generator also provides logical proposition evaluation. Here, transition propositions are currently
@@ -35,11 +35,8 @@ class BooleanStateSpaceGenerator(
 
     override val stateCount: Int = Math.pow(2.0, model.variables.size.toDouble()).toInt()
 
-    val successors: MutableMap<Int, List<Transition<BDD>>> = HashMap()
-    val predecessors: MutableMap<Int, List<Transition<BDD>>> = HashMap()
-
-    // computation in some map (or array, since state IDs are continuous).
-
+    private val successors: MutableMap<Int, List<Transition<BDD>>> = HashMap()
+    private val predecessors: MutableMap<Int, List<Transition<BDD>>> = HashMap()
 
     init {
         for (i in 0 until stateCount) {
@@ -49,6 +46,7 @@ class BooleanStateSpaceGenerator(
         for (i in 0 until stateCount) {
             predecessors[i] = i.obtainPredecessors()
         }
+            val testBreakPoint = 5
     }
 
 
@@ -56,15 +54,14 @@ class BooleanStateSpaceGenerator(
         var hasTransition = ff
         val fromState = this
         val transitions = ArrayList<Transition<BDD>>()
-        // For each system variable, compute the update function and compute parameters for which
-        // the current variable value can be flipped (so if value is 0, use result of update function,
+        // For each system variable, compute the union function and compute parameters for which
+        // the current variable value can be flipped (so if value is 0, use result of union function,
         // if value is 1, use complement).
 
         model.variables.forEachIndexed { index, variable ->
             kotlin.run {
-                val varIndex = model.variables.size - 1 - index
                 val updateFunctionResult = variable.updateFunction.invoke(this@BooleanStateSpaceGenerator, fromState)
-                val oldValue = getVarValue(varIndex)
+                val oldValue = getVarValue(index)
 
                 val transitionParams = if (!oldValue) updateFunctionResult else updateFunctionResult.not()
 
@@ -72,7 +69,7 @@ class BooleanStateSpaceGenerator(
 
                 if (transitionParams.isSat()) {
 
-                    val toState = fromState.setVarValue(varIndex, oldValue.not())
+                    val toState = fromState.setVarValue(index, oldValue.not())
 
                     transitions.add(Transition(
                             target = toState, bound = transitionParams,
@@ -121,7 +118,7 @@ class BooleanStateSpaceGenerator(
                                             // Name of variable which is being changed
                                             name = directionToReverse.name,
                                             // Positive/Negative facet inverse to reversed direction
-                                            facet = if (directionToReverse.facet == Facet.NEGATIVE) Facet.POSITIVE else Facet.NEGATIVE // tu si nie som isty skonzultovat
+                                            facet = if (directionToReverse.facet == Facet.NEGATIVE) Facet.POSITIVE else Facet.NEGATIVE
                                     )
                                 })
                 )
@@ -188,9 +185,13 @@ class BooleanStateSpaceGenerator(
                 val leftVarPosition = model.variables.indexOf(model.variables.firstOrNull { it.name == leftVar.name })
                 val rightVarPosition = model.variables.indexOf(model.variables.firstOrNull { it.name == rightVar.name })
 
+                if (leftVarPosition == -1 || rightVarPosition == -1) {
+                    throw IllegalArgumentException("One of vars doesn't exist in model.")
+                }
+
                 for (i in 0 until stateCount) {
                     if (cmp.compare(i.getVarValue(leftVarPosition), i.getVarValue(rightVarPosition))) {
-                        resultMap.set(i, tt)
+                        resultMap[i] = tt
                     }
                 }
 
@@ -200,9 +201,14 @@ class BooleanStateSpaceGenerator(
                 val rightConst = right as Expression.Constant
 
                 val leftVarPosition = model.variables.indexOf(model.variables.firstOrNull { it.name == leftVar.name })
+
+                if (leftVarPosition == -1) {
+                    throw IllegalArgumentException("One of vars doesn't exist in model.")
+                }
+
                 for (i in 0 until stateCount) {
                     if (cmp.compare(i.getVarValue(leftVarPosition), rightConst.value.roundToInt() != 0)) {
-                        resultMap.set(i, tt)
+                        resultMap[i] = tt
                     }
                 }
 
@@ -211,9 +217,13 @@ class BooleanStateSpaceGenerator(
                 val rightVar = right as Expression.Variable
                 val leftConst = left as Expression.Constant
 
-                val leftVarPosition = model.variables.indexOf(model.variables.firstOrNull { it.name == rightVar.name })
+                val rightVarPosition = model.variables.indexOf(model.variables.firstOrNull { it.name == rightVar.name })
+                if (rightVarPosition == -1) {
+                    throw IllegalArgumentException("One of vars doesn't exist in model.")
+                }
+
                 for (i in 0 until stateCount) {
-                    if (cmp.compare(i.getVarValue(leftVarPosition), leftConst.value.roundToInt() != 0)) {
+                    if (cmp.compare(i.getVarValue(rightVarPosition), leftConst.value.roundToInt() != 0)) {
                         resultMap[i] = tt
                     }
                 }
@@ -223,9 +233,8 @@ class BooleanStateSpaceGenerator(
             left is Expression.Constant && right is Expression.Constant -> {
                 val leftConst = left as Expression.Constant
                 val rightConst = right as Expression.Constant
-
-                for (i in 0 until stateCount) {
-                    if (cmp.compare(leftConst.value.roundToInt() != 0, rightConst.value.roundToInt() != 0)) {
+                if (cmp.compare(leftConst.value.roundToInt() != 0, rightConst.value.roundToInt() != 0)) {
+                    for (i in 0 until stateCount) {
                         resultMap[i] = tt
                     }
                 }
