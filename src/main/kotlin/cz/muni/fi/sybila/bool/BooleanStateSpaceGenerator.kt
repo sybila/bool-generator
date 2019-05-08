@@ -151,12 +151,10 @@ class BooleanStateSpaceGenerator(
     }
 
     private fun CompareOp.compare(a: Boolean, b: Boolean): Boolean {
-        return if (this == CompareOp.EQ) {
-            a == b
-        } else if (this == CompareOp.NEQ) {
-            a != b
-        } else {
-            throw IllegalAccessException("Can only use for EQ and NEQ CompareOp")
+        return when {
+            this == CompareOp.EQ -> a == b
+            this == CompareOp.NEQ -> a != b
+            else -> throw IllegalAccessException("Can only use for EQ and NEQ CompareOp")
         }
     }
 
