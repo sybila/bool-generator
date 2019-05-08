@@ -4,7 +4,7 @@ import com.github.sybila.checker.Solver
 import cz.muni.fi.sybila.bool.BooleanSolver
 import java.nio.ByteBuffer
 
-data class BDD(val ref: Int) // zamenit za inline ?
+data class BDD(val ref: Int)
 
 class BDDSolver(
         varCount: Int
@@ -40,7 +40,7 @@ class BDDSolver(
 
     override fun BDD.minimize() {
         TODO("not implemented")
-        //bdd.simplify or  bdd.restrict
+        //bdd.simplify
     }
 
     override fun BDD.not(): BDD {
@@ -97,23 +97,19 @@ class BDDSolver(
                 when (char) {
                     '0' -> {
                         this.put(0)
-                        this.put(0)
                     }
                     '1' -> {
                         this.put(1)
-                        this.put(1)
                     }
                     '-' -> {
-                        this.put(0)
-                        this.put(1)
+                        this.put(2)
                     }
                     else -> {
                         throw IllegalStateException("Unknown char in set.")
                     }
                 }
             }
-            this.put(1)
-            this.put(0)
+            this.put(3)
         }
 
         return this
@@ -123,12 +119,14 @@ class BDDSolver(
     override fun BDD.byteSize(): Int {
         return if (ref > 1) {
             val sets = VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd)
-            // we need 2 numbers for each var and 2 extra for set ending indication, for each set
-            return sets.size * (2 * bdd.numberOfVariables() + 2)
+            // we need 1 byte for each var and 1 extra for set ending indication, for each set
+            return sets.size * (bdd.numberOfVariables() + 1)
         } else {
             1
         }
     }
+
+    private fun ByteBuffer.compareByteAtIndex(index: Int, byte: Int) = this.array()[index] == byte.toByte()
 
     override fun ByteBuffer.getColors(): BDD {
         if (this.array().isEmpty()) {
@@ -142,36 +140,36 @@ class BDDSolver(
             }
         }
 
-
-        // wtf toto tu asi nema byt result = ArrayList<ArrayList<Char>>()
-
         // count vars in one set
-        var i = 0
-        while ((this.array()[i] == 1.toByte() && this.array()[i + 1] == 0.toByte()).not()) {
-            i += 2
+        var varsize = 0
+        while (this.array()[varsize] != 3.toByte()) {
+            varsize += 1
         }
 
-        val varsSize = i / 2
+        val varModulo = varsize + 1
 
-        if (bdd.numberOfVariables() > varsSize) {
+        if (bdd.numberOfVariables() > varModulo) {
             throw IllegalArgumentException("Can't create BDD - too many vars")
         }
 
-        i = 0
         var resultBDD: BDD? = null
         var bufferBDD: BDD? = null
-        while (i < this.array().size) {
+
+        for (index in 0 until this.array().size) {
             when {
-                // 11 -> var must be positive
-                this.array()[i] == 1.toByte() && this.array()[i + 1] == 1.toByte() -> {
-                    bufferBDD = bufferBDD?.and(one((i / 2) % varsSize)) ?: one((i / 2) % (varsSize + 1))
+
+                // 0 -> var must be negative
+                this.compareByteAtIndex(index, 0)  -> {
+                    bufferBDD = bufferBDD?.and(zero( index % varModulo)) ?: zero(index % varModulo)
                 }
-                // 00 -> var must be negative
-                this.array()[i] == 0.toByte() && this.array()[i + 1] == 0.toByte() -> {
-                    bufferBDD = bufferBDD?.and(zero((i / 2) % varsSize)) ?: zero((i / 2) % (varsSize + 1))
+                // 1 -> var must be positive
+                this.compareByteAtIndex(index, 1) -> {
+                    bufferBDD = bufferBDD?.and(one(index % varModulo)) ?: one(index % varModulo)
                 }
-                // 10 -> end of one set, append as "or" to result and continue further
-                this.array()[i] == 1.toByte() && this.array()[i + 1] == 0.toByte() -> {
+                // 2 -> var can be either positive or negative, pass
+
+                // 3 -> end of one set, append as "or" to result and continue further
+                this.compareByteAtIndex(index, 3)  -> {
                     // println("buffer")
                     // println(bufferBDD?.prettyPrint())
                     if (bufferBDD != null && bufferBDD.ref != 1) {
@@ -180,7 +178,6 @@ class BDDSolver(
                     bufferBDD = null
                 }
             }
-            i += 2
         }
 
         return resultBDD ?: BDD(1)

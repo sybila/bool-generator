@@ -29,7 +29,6 @@ class BooleanStateSpaceGeneratorTest {
                     Transition(0b00, DirectionFormula.Atom.Loop, tt)
             ), 0b00.successors(true).asSequence().toSet())
 
-            // asi chyba v testoch, vysledok by mal by 0b10 nie 0b01
             // 01 -> 01 because 0 and 1 = 0, 0 xor 1 = 1
             assertEquals(setOf(
                     Transition(0b00, DirectionFormula.Atom.Proposition("x", Facet.NEGATIVE), tt),
@@ -105,7 +104,7 @@ class BooleanStateSpaceGeneratorTest {
         // x' = x and y
         // y' = x (p => or, !p => xor) y (or and xor differ by exactly one truth value
 
-        val brokenModel = BooleanModel(0,
+        val model = BooleanModel(0,
                 BooleanModel.Variable("a") { s ->
                     val a = s.getVarValue(0)
                     val b = s.getVarValue(1)
@@ -183,7 +182,7 @@ class BooleanStateSpaceGeneratorTest {
               esac;
             */
 
-        BooleanStateSpaceGenerator(brokenModel).apply {
+        BooleanStateSpaceGenerator(model).apply {
 
             // just e
             assertEquals(setOf(
@@ -214,7 +213,25 @@ class BooleanStateSpaceGeneratorTest {
             ), 0b00001.successors(true).asSequence().toSet())
 
 
-            // rozsirit
+
+
+            // 11111 -> 01111, 10111, 11011, 11101, 11110
+            assertEquals(setOf(
+                    Transition(0b01111, DirectionFormula.Atom.Proposition("e", Facet.NEGATIVE), tt),
+                    Transition(0b10111, DirectionFormula.Atom.Proposition("d", Facet.NEGATIVE), tt),
+                    Transition(0b11011, DirectionFormula.Atom.Proposition("c", Facet.NEGATIVE), tt),
+                    Transition(0b11101, DirectionFormula.Atom.Proposition("b", Facet.NEGATIVE), tt),
+                    Transition(0b11110, DirectionFormula.Atom.Proposition("a", Facet.NEGATIVE), tt)
+            ), 0b11111.successors(true).asSequence().toSet())
+
+            // a && c && e -> 10001, 00101, 10100
+            assertEquals(setOf(
+                    Transition(0b00101, DirectionFormula.Atom.Proposition("e", Facet.NEGATIVE), tt),
+                    Transition(0b10001, DirectionFormula.Atom.Proposition("c", Facet.NEGATIVE), tt),
+                    Transition(0b10100, DirectionFormula.Atom.Proposition("a", Facet.NEGATIVE), tt)
+                    ), 0b10101.successors(true).asSequence().toSet())
+
+
         }
 
     }
@@ -239,7 +256,7 @@ class BooleanStateSpaceGeneratorTest {
 
                     when {
                         x and y -> one(0)
-                        x and !y -> one(1).or(one(2))
+                        x and !y -> one(1) or one(2)
                         !x and y -> tt
                         !x and !y -> one(5)
                         else -> throw IllegalStateException("This shoudln't be possible.")
