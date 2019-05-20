@@ -1,7 +1,7 @@
 package cz.muni.fi.sybila.bool
 
+import com.github.sybila.huctl.DirectionFormula
 import cz.muni.fi.sybila.bool.rg.network
-import cz.muni.fi.sybila.bool.solver.BDDSolver
 
 fun main(args: Array<String>) {
     // #P = 48, |P| = 4.67e5, |S| = 32
@@ -47,10 +47,33 @@ fun main(args: Array<String>) {
     }
 
     val model = G2A.asBooleanModel()
-    val solver = BDDSolver(model.parameterCount)
+    val generator = BooleanStateSpaceGenerator(model)
+    val admissibleParameters = G2A.staticConstraintsBDD(generator)
+
+    val possibleStates = (0..31).toList()
 
 
-    solver.run {
-        val admissibleParameters = G2A.staticConstraintsBDD(this)
+    generator.run {
+
+        println("Admissible Parameters: ${admissibleParameters}")
+
+
+        // vyfiltruje vsetko okrem self loopov v transitions pre kazdy stav
+        // pre kazdy self loop vypise jeho parametre
+        // a ci su splnitelne zaroven s admissible parameters
+        // vysledkom je, ze pre boundParameters.and(admissibleParameters) assignment je dana vec validny attractor ???
+
+        val successors = possibleStates.asSequence().map { state ->
+            state.successors(true)
+                    .asSequence().filter { transition ->
+                        transition.direction == DirectionFormula.Atom.Loop
+                    }.onEach {
+
+                        println("$state -> $it, bdd.and(admissibleParameters).ref= ${it.bound.and(admissibleParameters).ref}, " +
+                                "\n bdd admissible = ${admissibleParameters.and(it.bound).ref != 0}," +
+                                " bdd bez and = ${it.bound.prettyPrint()}")
+                        println("")
+                    }.toList()
+        }.toList()
     }
 }

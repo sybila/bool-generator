@@ -37,26 +37,6 @@ object VarSetCreator {
         }
     }
 
-
-    fun getVarSetsPure(bdd: Int, max: Int, nt: NodeTable): ArrayList<ArrayList<Char>> {
-
-        chars = Allocator.allocateCharArray(max)
-
-        return if (bdd < 2) {
-            ArrayList() //return if (bdd == 0) "FALSE" else "TRUE"
-        } else {
-
-            charsLength = max
-            this.nt = nt
-
-            result = ArrayList()
-            createSetsPure(bdd, 0, ArrayList())
-
-            result
-        }
-    }
-
-
     private fun createSets(bdd: Int, level: Int, resultRow: ArrayList<Char>) {
 
         if (level == charsLength) {
