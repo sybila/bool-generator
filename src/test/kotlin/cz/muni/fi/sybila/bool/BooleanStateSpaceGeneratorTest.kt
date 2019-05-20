@@ -10,17 +10,20 @@ class BooleanStateSpaceGeneratorTest {
 
     @Test
     fun noParametersTwoVarTest() {
-        // A very simple boolean network with two variables, no parameters and following update functions:
-        // x' = x and y
-        // y' = x xor y
-        val model = BooleanModel(0,
+
+        val variables = listOf(
                 BooleanModel.Variable("x") { s ->
-                    if (s.getVarValue(0) && s.getVarValue(1)) tt else ff
+                    if (s.getVarValue(0) && s.getVarValue(1)
+                    )
+                        tt else ff
                 },
                 BooleanModel.Variable("y") { s ->
-                    if (s.getVarValue(0) xor s.getVarValue(1)) tt else ff
+                    if (s.getVarValue(0) xor s.getVarValue(1))
+                        tt else ff
                 }
         )
+
+        val model = BooleanModel(parameterCount = 0, variables = variables)
 
         BooleanStateSpaceGenerator(model).apply {
 
@@ -44,7 +47,6 @@ class BooleanStateSpaceGeneratorTest {
             assertEquals(setOf(
                     Transition(0b01, DirectionFormula.Atom.Proposition("y", Facet.NEGATIVE), tt)
             ), 0b11.successors(true).asSequence().toSet())
-
         }
     }
 
@@ -54,9 +56,10 @@ class BooleanStateSpaceGeneratorTest {
         // x' = x and y
         // y' = x (p => or, !p => xor) y (or and xor differ by exactly one truth value
 
-        val model = BooleanModel(1,
+        val variables = listOf(
                 BooleanModel.Variable("x") { s ->
-                    if (s.getVarValue(0) && s.getVarValue(1)) tt else ff
+                    if (s.getVarValue(0) && s.getVarValue(1))
+                        tt else ff
                 },
                 BooleanModel.Variable("y") { s ->
                     val x = s.getVarValue(0)
@@ -70,6 +73,8 @@ class BooleanStateSpaceGeneratorTest {
                     }
                 }
         )
+
+        val model = BooleanModel(parameterCount = 1, variables = variables)
 
         BooleanStateSpaceGenerator(model).apply {
 
@@ -100,10 +105,6 @@ class BooleanStateSpaceGeneratorTest {
 
     @Test
     fun noParameterMultipleVarsTest() {
-        // A very simple boolean network with two variables, one parameters and following update functions:
-        // x' = x and y
-        // y' = x (p => or, !p => xor) y (or and xor differ by exactly one truth value
-
         val model = BooleanModel(0,
                 BooleanModel.Variable("a") { s ->
                     val a = s.getVarValue(0)
@@ -213,8 +214,6 @@ class BooleanStateSpaceGeneratorTest {
             ), 0b00001.successors(true).asSequence().toSet())
 
 
-
-
             // 11111 -> 01111, 10111, 11011, 11101, 11110
             assertEquals(setOf(
                     Transition(0b01111, DirectionFormula.Atom.Proposition("e", Facet.NEGATIVE), tt),
@@ -229,7 +228,7 @@ class BooleanStateSpaceGeneratorTest {
                     Transition(0b00101, DirectionFormula.Atom.Proposition("e", Facet.NEGATIVE), tt),
                     Transition(0b10001, DirectionFormula.Atom.Proposition("c", Facet.NEGATIVE), tt),
                     Transition(0b10100, DirectionFormula.Atom.Proposition("a", Facet.NEGATIVE), tt)
-                    ), 0b10101.successors(true).asSequence().toSet())
+            ), 0b10101.successors(true).asSequence().toSet())
 
 
         }
@@ -284,7 +283,7 @@ class BooleanStateSpaceGeneratorTest {
                     Transition(0b10, DirectionFormula.Atom.Proposition("x", Facet.NEGATIVE), zero(0)),
                     Transition(0b01, DirectionFormula.Atom.Proposition("y", Facet.NEGATIVE), tt)),
                     0b11.successors(true).asSequence().toSet())
-            
+
             // 01 -!(p1 or p2)-> 00, 01 -!p3-> 11
             assertEquals(setOf(
                     Transition(0b00, DirectionFormula.Atom.Proposition("x", Facet.NEGATIVE), zero(1) and zero(2)),
@@ -293,13 +292,11 @@ class BooleanStateSpaceGeneratorTest {
                     0b01.successors(true).asSequence().toSet())
 
 
-
             // 10 -> 11, 10 -!p4>  00
             assertEquals(setOf(
                     Transition(0b11, DirectionFormula.Atom.Proposition("x", Facet.POSITIVE), tt),
                     Transition(0b00, DirectionFormula.Atom.Proposition("y", Facet.NEGATIVE), zero(4))),
                     0b10.successors(true).asSequence().toSet())
-
 
 
             // 00 -p5-> 10, 00 -p5-> 01, 00->!p-> 00

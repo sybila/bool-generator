@@ -3,7 +3,7 @@ package cz.muni.fi.sybila.bool
 import cz.muni.fi.sybila.bool.rg.network
 import cz.muni.fi.sybila.bool.solver.BDDSolver
 
-fun main() {
+fun main(args: Array<String>) {
     // #P = 48, |P| = 4.67e5, |S| = 32
     val G2A = network {
         val CtrA = specie("CtrA")
@@ -48,7 +48,9 @@ fun main() {
 
     val model = G2A.asBooleanModel()
     val solver = BDDSolver(model.parameterCount)
-    val admissibleParameters = G2A.staticConstraintsBDD(solver)
 
-    
+
+    solver.run {
+        val admissibleParameters = G2A.staticConstraintsBDD(this)
+    }
 }

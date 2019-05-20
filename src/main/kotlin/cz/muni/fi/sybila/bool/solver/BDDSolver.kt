@@ -15,7 +15,6 @@ class BDDSolver(
     val vars = ArrayList<Int>()
 
     // bdd.ref() only increases refferences to prevent accidental garbage collection
-    // TODO: implement dereffing?
 
     init {
         for (i in 0 until varCount) {
@@ -39,8 +38,7 @@ class BDDSolver(
     }
 
     override fun BDD.minimize() {
-        TODO("not implemented")
-        //bdd.simplify
+        // is not possible without changing ordering
     }
 
     override fun BDD.not(): BDD {
@@ -58,7 +56,7 @@ class BDDSolver(
             else -> {
                 VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd)
                         .joinToString("\n") { resultSet ->
-                            resultSet.fold(StringBuilder()) { builder, char -> builder.append(char) }.toString()
+                            resultSet.joinToString("")
                         }
             }
         }
@@ -159,8 +157,8 @@ class BDDSolver(
             when {
 
                 // 0 -> var must be negative
-                this.compareByteAtIndex(index, 0)  -> {
-                    bufferBDD = bufferBDD?.and(zero( index % varModulo)) ?: zero(index % varModulo)
+                this.compareByteAtIndex(index, 0) -> {
+                    bufferBDD = bufferBDD?.and(zero(index % varModulo)) ?: zero(index % varModulo)
                 }
                 // 1 -> var must be positive
                 this.compareByteAtIndex(index, 1) -> {
@@ -169,7 +167,7 @@ class BDDSolver(
                 // 2 -> var can be either positive or negative, pass
 
                 // 3 -> end of one set, append as "or" to result and continue further
-                this.compareByteAtIndex(index, 3)  -> {
+                this.compareByteAtIndex(index, 3) -> {
                     // println("buffer")
                     // println(bufferBDD?.prettyPrint())
                     if (bufferBDD != null && bufferBDD.ref != 1) {
