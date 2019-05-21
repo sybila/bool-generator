@@ -1,7 +1,9 @@
 package cz.muni.fi.sybila.bool
 
-import com.github.sybila.huctl.DirectionFormula
+import com.github.sybila.checker.SequentialChecker
+import com.github.sybila.huctl.*
 import cz.muni.fi.sybila.bool.rg.network
+import kotlin.contracts.contract
 
 fun main(args: Array<String>) {
     // #P = 48, |P| = 4.67e5, |S| = 32
@@ -63,17 +65,30 @@ fun main(args: Array<String>) {
         // a ci su splnitelne zaroven s admissible parameters
         // vysledkom je, ze pre boundParameters.and(admissibleParameters) assignment je dana vec validny attractor ???
 
+        val count = Count(this)
         val successors = possibleStates.asSequence().map { state ->
             state.successors(true)
                     .asSequence().filter { transition ->
-                        transition.direction == DirectionFormula.Atom.Loop
+                        (transition.direction == DirectionFormula.Atom.Loop) && (transition.bound and admissibleParameters).isSat()
                     }.onEach {
-
+                        count.push(it.bound)
                         println("$state -> $it, bdd.and(admissibleParameters).ref= ${it.bound.and(admissibleParameters).ref}, " +
                                 "\n bdd admissible = ${admissibleParameters.and(it.bound).ref != 0}," +
                                 " bdd bez and = ${it.bound.prettyPrint()}")
                         println("")
                     }.toList()
         }.toList()
+
+        for (i in 0 until count.max) {
+            println("I have $i attractors for ${(count[i] and admissibleParameters).satCount()}")
+        }
+
+        /*val prop = AF(AG("GcrA".asVariable().eq(1.0.asConstant())))
+        SequentialChecker(this).use { mc ->
+            val result = mc.verify(prop)
+            result.entries().forEach { (s, p) ->
+                println("Holds in $s for ${p.prettyPrint()}")
+            }
+        }*/
     }
 }

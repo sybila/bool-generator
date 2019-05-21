@@ -14,7 +14,7 @@ import cz.muni.fi.sybila.bool.solver.BDD
 interface BooleanSolver : Solver<BDD> {
 
     /** Returns the number of satisfying variable assignments */
-    fun BDD.satCount(): Int
+    fun BDD.satCount(): Double
 
     /** Create a BDD set where variable [varIndex] is set to true and all other variables are unspecified. */
     fun one(varIndex: Int): BDD

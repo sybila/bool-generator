@@ -63,14 +63,15 @@ class BDDSolver(
 
     }
 
-    override fun BDD.satCount(): Int {
-        return when (ref) {
+    override fun BDD.satCount(): Double {
+        return bdd.satCount(this.ref)
+        /*return when (ref) {
             1 -> 0
             0 -> 0
             else -> {
                 VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd, true).size
             }
-        }
+        }*/
     }
 
     /**
