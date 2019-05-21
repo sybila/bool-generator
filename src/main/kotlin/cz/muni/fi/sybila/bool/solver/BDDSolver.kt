@@ -63,6 +63,16 @@ class BDDSolver(
 
     }
 
+    override fun BDD.satCount(): Int {
+        return when (ref) {
+            1 -> 0
+            0 -> 0
+            else -> {
+                VarSetCreator.getVarSets(this.ref, bdd.numberOfVariables(), bdd, true).size
+            }
+        }
+    }
+
     /**
      * Returns BDD which is satisfied exactly when variable [varIndex] is one, regardless of other variables.
      */
