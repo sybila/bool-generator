@@ -41,6 +41,7 @@ dependencies {
     compile 'com.github.sybila:ctl-parser:2.2.3'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
     compile 'org.bitbucket.vahidi:jdd:108'
+    implementation 'nz.ac.waikato.cms.weka:weka-stable:3.8.3'
 }
 
 jacocoTestReport {

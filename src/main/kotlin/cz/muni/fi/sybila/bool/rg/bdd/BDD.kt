@@ -103,6 +103,8 @@ class BDDWorker(
         }
     }
 
+    // TODO: This is incorrect - if the variable is independent in one branch but dependent in another,
+    // it is visited only in the dependent branch as thus marked incorrectly.
     fun determinedVars(a: BDD): Pair<Set<Int>, Set<Int>> {
         val zeroes = (0 until numVars).toMutableSet()
         val ones = (0 until numVars).toMutableSet()

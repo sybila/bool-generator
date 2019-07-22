@@ -3,6 +3,26 @@ package cz.muni.fi.sybila.bool.rg
 @Suppress("LocalVariableName")
 object Network {
 
+    val paper = network {
+        // order of species is super duper important because it matches the order in tables in the paper
+        // so the BDDs are actually compatible...
+        val p53 = specie("p53")
+        val dna = specie("DNA")
+        val m2c = specie("M2C")
+        val m2n = specie("M2N")
+
+        p53 inhibits dna
+        p53 activates m2c
+        p53 inhibits m2n
+
+        m2c activates m2n
+
+        m2n inhibits p53
+
+        dna maybeActivates dna
+        dna inhibits m2n
+    }
+
     // #P = 54, |P| = 2.07e5, |S| = 512
     val BuddingYeast2008 = network {
         val CLN3 = specie("CLN3")

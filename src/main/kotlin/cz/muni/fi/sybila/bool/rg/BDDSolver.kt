@@ -19,7 +19,7 @@ class BDDSolver(
     private val states = BooleanStateEncoder(network)
 
     private val threadUniverse: ThreadLocal<BDDWorker>// = ThreadLocal.withInitial { BDDWorker(params.parameterCount) }
-    private val universe
+    val universe
         get() = threadUniverse.get()
 
             /* Maps our parameter indices to BDD sets. */
@@ -30,12 +30,12 @@ class BDDSolver(
     val unit: BDDSet
 
     val variables: Int
-    val fixedOne: List<Int>
-    val fixedZero: List<Int>
+    val fixedOne: List<Int> = emptyList()
+    val fixedZero: List<Int> = emptyList()
 
     init {
-        val fullWorker = BDDWorker(params.parameterCount)
-        var result = fullWorker.one
+        //val fullWorker = BDDWorker(params.parameterCount)
+        /*var result = fullWorker.one
         println("Num. parameters: ${params.parameterCount}")
         // Compute the "unit" BDD of valid parameters:
         var restrictedOnes = fullWorker.one
@@ -67,16 +67,16 @@ class BDDSolver(
             }
         }
         println("Unit BDD size: ${fullWorker.nodeCount(result)} and cardinality ${fullWorker.cardinality(result)}")
-        println("Redundant variables: ${fullWorker.determinedVars(result)}")
-        val (zeroes, ones) = fullWorker.determinedVars(result)
-        fixedOne = ones.sorted()
-        fixedZero = zeroes.sorted()
+        println("Redundant variables: ${fullWorker.determinedVars(result)}")*/
+        //val (zeroes, ones) = emptyList<Parameter>() to emptyList<Parameter>()//fullWorker.determinedVars(result)
+        //fixedOne = ones.sorted()
+        //fixedZero = zeroes.sorted()
 
         threadUniverse = ThreadLocal.withInitial {
-            BDDWorker(params.parameterCount - zeroes.size - ones.size)
+            BDDWorker(params.parameterCount)// - zeroes.size - ones.size)
         }
         empty = universe.zero
-        var i = 0
+        /*var i = 0
         var index = 0
         val varNames = ArrayList<BDDSet>()
         while (i < params.parameterCount) {
@@ -89,14 +89,14 @@ class BDDSolver(
                 index += 1
             }
             i += 1
-        }
-        parameterVarNames = varNames.toTypedArray()
-        parameterNotVarNames = varNames.map { universe.not(it) }.toTypedArray()
+        }*/
+        parameterVarNames = (0 until params.parameterCount).map { universe.variable(it) }.toTypedArray()// varNames.toTypedArray()
+        parameterNotVarNames = parameterVarNames.map { universe.not(it) }.toTypedArray()//varNames.map { universe.not(it) }.toTypedArray()
 
         // Compute unit over reduced BDDs:
-        result = universe.one
-        variables = params.parameterCount - ones.size - zeroes.size
-        println("Num. parameters: ${params.parameterCount - ones.size - zeroes.size}")
+        var result = universe.one
+        variables = params.parameterCount// - ones.size - zeroes.size
+        println("Num. parameters: ${params.parameterCount/* - ones.size - zeroes.size*/}")
         // Compute the "unit" BDD of valid parameters:
         for (r in network.regulations) {
             val pairs = params.regulationPairs(r.regulator, r.target).map { (off, on) ->
