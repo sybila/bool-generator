@@ -1,8 +1,6 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.bdd.BDDWorker
-import jdd.bdd.BDD
-import jdd.util.Configuration
 
 /**
  * Solver constructs a universe parameter set space based on a given boolean network
