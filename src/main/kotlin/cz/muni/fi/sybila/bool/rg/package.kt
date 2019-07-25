@@ -35,13 +35,19 @@ inline fun <T> List<T>.mergePairs(merge: (T, T) -> T): List<T> {
 }
 
 val model = Network.DrosophilaCellCycle
-val parallelism = Runtime.getRuntime().availableProcessors()
+val parallelism = 1//Runtime.getRuntime().availableProcessors()
 val exact = true
 val pool: ExecutorService = Executors.newWorkStealingPool(parallelism)//.newFixedThreadPool(parallelism)
 
 fun ExecutorService.parallel(action: () -> Unit) {
     (1..parallelism).map {
         pool.submit(action)
+    }.map { it.get() }
+}
+
+fun ExecutorService.parallelWithId(action: (Int) -> Unit) {
+    (0 until parallelism).map { id ->
+        pool.submit { action(id) }
     }.map { it.get() }
 }
 

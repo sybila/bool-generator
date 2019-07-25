@@ -5,7 +5,9 @@ import cz.muni.fi.sybila.bool.rg.parallel.ConcurrentStateQueue
 import cz.muni.fi.sybila.bool.rg.parallel.RepeatingConcurrentStateQueue
 import cz.muni.fi.sybila.bool.rg.parallel.StateQueue
 import java.util.*
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.ArrayList
+import kotlin.math.roundToInt
 
 class ColouredGraph(
         network: BooleanNetwork,
@@ -280,6 +282,183 @@ class ColouredGraph(
             }.filterNotNull()
         }
         result
+    }
+
+    fun dfs() = solver.run {
+        /*val reallyDead = newMap()
+
+        val expectedTotal = unit.cardinality() * stateCount
+        val remaining: AtomicReference<Double> = AtomicReference(expectedTotal)
+        pool.parallelWithId { id ->
+            val dead = newMap()
+            val start = System.currentTimeMillis()
+            var iter = 0
+            val stack = ArrayList<StackEntry>()
+            val shift = (id * (stateCount.toDouble() / parallelism)).roundToInt()
+            for (rootOrig in 0 until stateCount) {
+                val root = (rootOrig + shift) % stateCount
+                if (id == 0) {
+                    //println("Root: $root")
+                }
+                val undead = dead.get(root).not()
+                if (undead.isEmpty()) continue
+
+                stack.add(StackEntry(root, undead, dimensions))
+                dead.union(root, undead)
+                println("New root!")
+                println("Push $root for ${undead.cardinality()}")
+                //remaining.decrement(undead.cardinality())
+                while (stack.isNotEmpty()) {
+                    iter += 1
+                    val top = stack.last()
+                    val (s, sPOriginal) = top
+                    val sP = sPOriginal and reallyDead.get(s).not()
+                    if (sP.isNotEmpty() && top.hasNext()) {
+                        val d = top.next()
+                        val t = states.flipValue(s, d)
+                        val edgeP = solver.transitionParams(s, d)
+                        val newInT = sP and edgeP and dead.get(t).not()
+                        if (newInT.isNotEmpty()) {
+                            dead.union(t, newInT)
+                            println("Push $t for ${newInT.cardinality()} from $s")
+                            //remaining.decrement(newInT.cardinality())
+                            stack.add(StackEntry(t, newInT, dimensions))
+                        }
+                    } else {
+                        // pop empty iterator
+                        stack.removeAt(stack.lastIndex)
+                        reallyDead.union(s, sP)
+                        remaining.decrement(sP.cardinality())
+                        if (id == 0) {
+                            //print("\r Stack size: ${stack.size}, remaining: ${remaining.get()}/$expectedTotal (${(remaining.get()/expectedTotal * 10000.0).roundToInt()/100.0}%) Throughput: ${(iter.toDouble() / (System.currentTimeMillis() - start)) * 1000.0}/s")
+                        }
+                    }
+                }
+            }
+        }*/
+        val visited = newMap()
+
+        val expectedTotal = unit.cardinality() * stateCount
+        var toDo = expectedTotal
+
+        val stack = ArrayList<StackEntry>()
+        for (root in 0 until stateCount) {
+
+            val notVisited = visited.get(root).not()
+            if (notVisited.isEmpty()) continue
+            stack.add(StackEntry(root, notVisited, dimensions))
+            visited.union(root, notVisited)
+            toDo -= notVisited.cardinality()
+            //println("New root!")
+            //println("Push $root for ${notVisited.cardinality()}")
+
+            while (stack.isNotEmpty()) {
+                val top = stack.last()
+                val (s, sP) = top
+                if (top.hasNext()) {
+                    val d = top.next()
+                    val t = states.flipValue(s, d)
+                    val edgeP = solver.transitionParams(s, d)
+                    val newInT = sP and edgeP and visited.get(t).not()
+                    if (newInT.isNotEmpty()) {
+                        visited.union(t, newInT)
+                        toDo -= newInT.cardinality()
+                        //println("Push $t for ${newInT.cardinality()} from $s")
+                        stack.add(StackEntry(t, newInT, dimensions))
+                    }
+                } else {
+                    stack.removeAt(stack.lastIndex)
+                    val remaining = visited.get(s).not()
+                    if (remaining.isNotEmpty()) {
+                        //println("Restarting in $s for ${remaining.cardinality()}")
+                        visited.union(s, remaining)
+                        toDo -= remaining.cardinality()
+                        stack.add(StackEntry(s, remaining, dimensions))
+                    }
+                    print("\r Stack: ${stack.size}; Remaining: $toDo/$expectedTotal ${(toDo / expectedTotal) * 100}%")
+                }
+            }
+        }
+
+        println()
+
+    }
+
+    private fun scc() {
+        /*
+            val sets = DisjointSets(...)
+            val dead = newMap()
+            val onStack = newMap()
+            val stack = ArrayList<StackEntry>()
+
+            for (root in 0 until stateCount) {
+                val notDead = sets.notDead(root)
+
+                //sets.setOf(root).map { (setRoot, setParams) ->
+                //    // parameters for which the set of root is not dead
+                //    dead.get(setRoot).not() and setParams
+                //}.fold(empty) { a, b -> a or b }
+
+                if (notDead.isEmpty()) continue
+
+                stack.add(StackEntry(root, notDead, dimensions))
+                onStack.union(root, notDead)
+                sets.update_bottom(root, 0, notDead)
+
+                while (stack.isNotEmpty()) {
+                    val top = stack.last()
+                    val (s, sP) = top
+                    if (top.hasNext()) {
+                        val d = top.next()
+                        val t = states.flipValue(s, d)
+                        val edgeParams = solver.transitionParams(s, d)
+                        val tNotDead = sets.notDead(t) and edgeParams and sP
+                        val foundCycle = onStack.get(t) and tNotDead
+                        if (foundCycle.isNotEmpty()) {
+                            var i = stack.lastIndex
+                            while (sets.sameSet(stack[i].s,t,foundCycle)) {
+                                sets.union(stack[i].s, t, foundCycle)
+                                i -= 1
+                            }
+                        }
+                        val fresh = onStack.get(t).not() and tNotDead
+                        if (fresh.isNotEmpty()) {
+                            onStack.union(t, fresh)
+                            sets.update_bottom(t, stack.size, notDead)
+                            stack.add(StackEntry(t, fresh, dimensions))
+                        }
+                    } else {
+                        stack.removeAt(stack.lastIndex)
+                        val isSetDone = sets.setBottom(s)
+                        if (isSetDone.isNotEmpty()) {
+                            sets.markDead(s, isSetDone)
+                        }
+                    }
+                }
+            }
+         */
+    }
+
+    private fun AtomicReference<Double>.decrement(value: Double) {
+        this.accumulateAndGet(value) { old, v -> old - v }
+    }
+
+    private class StackEntry(
+            val s: Int, val sP: BDDSet, dimensions: Int
+    ) : Iterator<Int> {
+
+        private var d = dimensions
+
+        override fun hasNext(): Boolean = d > 0
+
+        override fun next(): Int {
+            d -= 1
+            return d
+        }
+
+        operator fun component1(): Int = s
+        operator fun component2(): BDDSet = sP
+
     }
 
 }

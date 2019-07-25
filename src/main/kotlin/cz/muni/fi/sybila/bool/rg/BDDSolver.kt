@@ -113,9 +113,9 @@ class BDDSolver(
                 result = result uAnd constraint
             }
         }
-        println("[New] Unit BDD size: ${result.nodeSize()} and cardinality ${result.cardinality()}")
         println("[New] Redundant variables: ${universe.determinedVars(result)}")
         unit = result
+        println("[New] Unit BDD size: ${unit.nodeSize()} and cardinality ${unit.cardinality()}")
     }
 
     inline fun List<BDDSet>.merge(crossinline action: (BDDSet, BDDSet) -> BDDSet): BDDSet {
