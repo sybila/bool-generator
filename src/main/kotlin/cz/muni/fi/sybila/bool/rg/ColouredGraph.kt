@@ -1,6 +1,7 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
+import cz.muni.fi.sybila.bool.rg.map.DisjointSets
 import cz.muni.fi.sybila.bool.rg.parallel.ConcurrentStateQueue
 import cz.muni.fi.sybila.bool.rg.parallel.RepeatingConcurrentStateQueue
 import cz.muni.fi.sybila.bool.rg.parallel.StateQueue
@@ -385,6 +386,13 @@ class ColouredGraph(
     }
 
     private fun scc() {
+        val sets = DisjointSets(stateCount, solver)
+        val onStack = newMap()
+        val stack = ArrayList<StackEntry>()
+
+        for (root in 0 until stateCount) {
+            
+        }
         /*
             val sets = DisjointSets(...)
             val dead = newMap()
