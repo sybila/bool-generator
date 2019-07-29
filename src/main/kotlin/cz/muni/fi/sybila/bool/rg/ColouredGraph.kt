@@ -1,5 +1,6 @@
 package cz.muni.fi.sybila.bool.rg
 
+import com.github.sybila.huctl.not
 import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
 import cz.muni.fi.sybila.bool.rg.map.DisjointSets
 import cz.muni.fi.sybila.bool.rg.parallel.ConcurrentStateQueue
@@ -350,8 +351,8 @@ class ColouredGraph(
             stack.add(StackEntry(root, notVisited, dimensions))
             visited.union(root, notVisited)
             toDo -= notVisited.cardinality()
-            //println("New root!")
-            //println("Push $root for ${notVisited.cardinality()}")
+            println("New root!")
+            println("Push $root for ${notVisited.cardinality()}")
 
             while (stack.isNotEmpty()) {
                 val top = stack.last()
@@ -364,19 +365,19 @@ class ColouredGraph(
                     if (newInT.isNotEmpty()) {
                         visited.union(t, newInT)
                         toDo -= newInT.cardinality()
-                        //println("Push $t for ${newInT.cardinality()} from $s")
+                        println("Push $t for ${newInT.cardinality()} from $s")
                         stack.add(StackEntry(t, newInT, dimensions))
                     }
                 } else {
                     stack.removeAt(stack.lastIndex)
-                    val remaining = visited.get(s).not()
+                    /*val remaining = visited.get(s).not()
                     if (remaining.isNotEmpty()) {
-                        //println("Restarting in $s for ${remaining.cardinality()}")
+                        println("Restarting in $s for ${remaining.cardinality()}")
                         visited.union(s, remaining)
                         toDo -= remaining.cardinality()
                         stack.add(StackEntry(s, remaining, dimensions))
-                    }
-                    print("\r Stack: ${stack.size}; Remaining: $toDo/$expectedTotal ${(toDo / expectedTotal) * 100}%")
+                    }*/
+                    //print("\r Stack: ${stack.size}; Remaining: $toDo/$expectedTotal ${(toDo / expectedTotal) * 100}%")
                 }
             }
         }
@@ -385,13 +386,28 @@ class ColouredGraph(
 
     }
 
-    private fun scc() {
+    private fun scc() = solver.run {
         val sets = DisjointSets(stateCount, solver)
         val onStack = newMap()
         val stack = ArrayList<StackEntry>()
 
         for (root in 0 until stateCount) {
-            
+            val notDead = sets.notDead(root)
+            if (notDead.isEmpty()) continue
+
+            stack.add(StackEntry(root, notDead, dimensions))
+            sets.initStateBottom(root, 0, notDead)
+            onStack.union(root, notDead)
+
+            while (stack.isNotEmpty()) {
+                val top = stack.last()
+                val (s, sP) = top
+                if (top.hasNext()) {
+
+                } else {
+                    stack.removeAt(stack.lastIndex)
+                }
+            }
         }
         /*
             val sets = DisjointSets(...)

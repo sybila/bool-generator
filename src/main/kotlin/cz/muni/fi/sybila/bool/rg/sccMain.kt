@@ -3,7 +3,7 @@ package cz.muni.fi.sybila.bool.rg
 import kotlin.system.measureTimeMillis
 
 fun main() {
-    val network = Network.FissionYeast2008
+    val network = Network.paper
 
     println("Species: ${network.species}")
 
