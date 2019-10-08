@@ -51,6 +51,13 @@ class DisjointSets(
                 .fold(empty) { a, b -> a or b }
     }
 
+    fun setDead(state: Int, params: BDDSet) = solver.run {
+        val roots = findRoots(state, params)
+        roots.forEach { (s, p) ->
+            isDead[s] = isDead[s] or p.toBDDSet()
+        }
+    }
+
     /**
      * Set stack bottom of the given [state] to be the specified [value] for the given [params].
      *
@@ -119,7 +126,10 @@ class DisjointSets(
             } else {
                 // parent >= state and parentsParent >= parent
                 for ((parentsParent, parentsParentParams) in data[parent]) {
-                    newPointer.union(parentsParent, parentParams.toBDDSet() and parentsParentParams.toBDDSet())
+                    val newParams = parentParams.toBDDSet() and parentsParentParams.toBDDSet()
+                    if (newParams.isNotEmpty()) {
+                        newPointer.union(parentsParent, newParams)
+                    }
                 }
             }
         }
@@ -132,7 +142,7 @@ class DisjointSets(
                     // parentParams are root params
                     result.union(state, parentParams)
                 } else {
-                    findRoots(state, parentParams, result)
+                    findRoots(parent, parentParams, result)
                 }
             }
         }
@@ -170,6 +180,16 @@ class DisjointSets(
             this[state] = solver.run { getValue(state).toBDDSet() or params }.toBDD()
         } else {
             this[state] = params.toBDD()
+        }
+    }
+
+    fun print() = solver.run {
+        for (s in data.indices) {
+            val pointer = data[s]
+            println("Parents of $s")
+            pointer.forEach { t, u ->
+                println("Parent $t with ${u.toBDDSet().cardinality()} params")
+            }
         }
     }
 

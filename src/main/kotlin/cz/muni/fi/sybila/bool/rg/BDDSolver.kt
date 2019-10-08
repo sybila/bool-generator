@@ -92,7 +92,21 @@ class BDDSolver(
         parameterNotVarNames = parameterVarNames.map { universe.not(it) }.toTypedArray()//varNames.map { universe.not(it) }.toTypedArray()
 
         // Compute unit over reduced BDDs:
-        var result = universe.one
+        var result = params.explicitOne.fold(universe.one) { bdd, p -> bdd and universe.variable(p) }
+        // apply specific parametrisation:
+        // P2 = 0, P3 = 0, P6 = 0
+        result = result uAnd universe.notVariable(8 + 1)
+        result = result uAnd universe.notVariable(8 + 2)
+        result = result uAnd universe.notVariable(8 + 7)
+        // P1 = 1, P5 = 1, P4 = 1
+        result = result uAnd universe.variable(8 + 0)
+        result = result uAnd universe.variable(8 + 6)
+        result = result uAnd universe.variable(8 + 5)
+
+        // P7 = 1, P8 = 1
+        result = result uAnd universe.variable(2 + 0)
+        result = result uAnd universe.variable(2 + 3)
+
         variables = params.parameterCount// - ones.size - zeroes.size
         println("Num. parameters: ${params.parameterCount/* - ones.size - zeroes.size*/}")
         // Compute the "unit" BDD of valid parameters:
@@ -116,6 +130,7 @@ class BDDSolver(
         println("[New] Redundant variables: ${universe.determinedVars(result)}")
         unit = result
         println("[New] Unit BDD size: ${unit.nodeSize()} and cardinality ${unit.cardinality()}")
+        universe.printDot(unit, "unit.bdd")
     }
 
     inline fun List<BDDSet>.merge(crossinline action: (BDDSet, BDDSet) -> BDDSet): BDDSet {

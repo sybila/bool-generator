@@ -386,10 +386,12 @@ class ColouredGraph(
 
     }
 
-    private fun scc() = solver.run {
+    fun scc() = solver.run {
         val sets = DisjointSets(stateCount, solver)
         val onStack = newMap()
         val stack = ArrayList<StackEntry>()
+
+        println("Finding SCC!")
 
         for (root in 0 until stateCount) {
             val notDead = sets.notDead(root)
@@ -398,69 +400,44 @@ class ColouredGraph(
             stack.add(StackEntry(root, notDead, dimensions))
             sets.initStateBottom(root, 0, notDead)
             onStack.union(root, notDead)
+            println("New root!")
+            println("Push $root for ${notDead.cardinality()}")
 
             while (stack.isNotEmpty()) {
                 val top = stack.last()
                 val (s, sP) = top
                 if (top.hasNext()) {
-
+                    val d = top.next()
+                    val t = states.flipValue(s, d)
+                    val edgeParams = solver.transitionParams(s, d)
+                    val tNotDead = sets.notDead(t) and edgeParams and sP
+                    val foundCycle = onStack.get(t) and tNotDead
+                    if (foundCycle.isNotEmpty()) {
+                        println("Found cycle: ${foundCycle.cardinality()}")
+                        var i = stack.lastIndex
+                        while (!sets.areSameSet(stack[i].s, t, foundCycle)) {
+                            sets.union(stack[i].s, t, foundCycle)
+                            i -= 1
+                        }
+                    }
+                    val fresh = onStack.get(t).not() and tNotDead
+                    if (fresh.isNotEmpty()) {
+                        onStack.union(t, fresh)
+                        println("Push $t for ${fresh.cardinality()} from $s")
+                        sets.initStateBottom(t, stack.size, fresh)
+                        stack.add(StackEntry(t, fresh, dimensions))
+                    }
                 } else {
                     stack.removeAt(stack.lastIndex)
-                }
-            }
-        }
-        /*
-            val sets = DisjointSets(...)
-            val dead = newMap()
-            val onStack = newMap()
-            val stack = ArrayList<StackEntry>()
-
-            for (root in 0 until stateCount) {
-                val notDead = sets.notDead(root)
-
-                //sets.setOf(root).map { (setRoot, setParams) ->
-                //    // parameters for which the set of root is not dead
-                //    dead.get(setRoot).not() and setParams
-                //}.fold(empty) { a, b -> a or b }
-
-                if (notDead.isEmpty()) continue
-
-                stack.add(StackEntry(root, notDead, dimensions))
-                onStack.union(root, notDead)
-                sets.update_bottom(root, 0, notDead)
-
-                while (stack.isNotEmpty()) {
-                    val top = stack.last()
-                    val (s, sP) = top
-                    if (top.hasNext()) {
-                        val d = top.next()
-                        val t = states.flipValue(s, d)
-                        val edgeParams = solver.transitionParams(s, d)
-                        val tNotDead = sets.notDead(t) and edgeParams and sP
-                        val foundCycle = onStack.get(t) and tNotDead
-                        if (foundCycle.isNotEmpty()) {
-                            var i = stack.lastIndex
-                            while (sets.sameSet(stack[i].s,t,foundCycle)) {
-                                sets.union(stack[i].s, t, foundCycle)
-                                i -= 1
-                            }
-                        }
-                        val fresh = onStack.get(t).not() and tNotDead
-                        if (fresh.isNotEmpty()) {
-                            onStack.union(t, fresh)
-                            sets.update_bottom(t, stack.size, notDead)
-                            stack.add(StackEntry(t, fresh, dimensions))
-                        }
-                    } else {
-                        stack.removeAt(stack.lastIndex)
-                        val isSetDone = sets.setBottom(s)
-                        if (isSetDone.isNotEmpty()) {
-                            sets.markDead(s, isSetDone)
-                        }
+                    val isDone = sets.getSetBottom(s, stack.size, sP)
+                    if (isDone.isNotEmpty()) {
+                        sets.setDead(s, isDone)
                     }
                 }
             }
-         */
+        }
+
+        sets.print()
     }
 
     private fun AtomicReference<Double>.decrement(value: Double) {

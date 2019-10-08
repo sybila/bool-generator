@@ -12,7 +12,7 @@ fun main() {
     val graph = ColouredGraph(network, solver)
 
     val elapsed = measureTimeMillis {
-        graph.dfs()
+        graph.scc()
     }
 
     println("Dfs time: $elapsed")

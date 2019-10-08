@@ -47,7 +47,7 @@ class BooleanParamEncoder(
             coefficients[i] = coefficients[i-1] + tableSizes[i-1]
         }
         coefficients
-    }
+    }.also { println("Coefficients: ${network.species.zip(it.toList())}") }
 
     val parameterCount = tableSizes.sum()
 
