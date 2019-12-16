@@ -1,15 +1,10 @@
 package cz.muni.fi.sybila.bool.rg
 
-import com.github.sybila.huctl.not
-import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
 import cz.muni.fi.sybila.bool.rg.map.DisjointSets
-import cz.muni.fi.sybila.bool.rg.parallel.ConcurrentStateQueue
 import cz.muni.fi.sybila.bool.rg.parallel.RepeatingConcurrentStateQueue
-import cz.muni.fi.sybila.bool.rg.parallel.StateQueue
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.ArrayList
-import kotlin.math.roundToInt
 
 class ColouredGraph(
         network: BooleanNetwork,

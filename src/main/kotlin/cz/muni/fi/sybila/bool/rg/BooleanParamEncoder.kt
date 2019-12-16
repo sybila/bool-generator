@@ -33,7 +33,7 @@ class BooleanParamEncoder(
     /**
      * Size of the logical table for each specie.
      */
-    private val tableSizes = IntArray(network.dimensions) {
+    val tableSizes = IntArray(network.dimensions) {
         1.shl(network.regulatoryContext(it).size)
     }
 
@@ -41,7 +41,7 @@ class BooleanParamEncoder(
      * Number of rows "below" the logical table of each specie.
      * Add this number to row index to obtain global parameter index.
      */
-    private val tableCoefficients: IntArray = run {
+    val tableCoefficients: IntArray = run {
         val coefficients = IntArray(network.dimensions)
         for (i in 1 until coefficients.size) {
             coefficients[i] = coefficients[i-1] + tableSizes[i-1]

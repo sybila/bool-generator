@@ -1,6 +1,7 @@
 package cz.muni.fi.sybila.bool.rg
 
 import cz.muni.fi.sybila.bool.rg.bdd.BDDWorker
+import kotlin.math.abs
 
 /**
  * Solver constructs a universe parameter set space based on a given boolean network
@@ -187,4 +188,65 @@ class BDDSolver(
     fun variable(v: Int) = parameterVarNames[v]
     fun variableNot(v: Int) = parameterNotVarNames[v]
 
+}
+
+fun main() {
+    val worker = BDDWorker(8)
+    val min = build_series(emptyList()).map { it to check_distances(it, worker) }.minBy { it.second }
+    println("Min distance: $min")
+    build_series(emptyList()).map { it to check_distances(it, worker) }
+            .filter { it.second == min!!.second }
+            .forEach { println(it.first) }
+}
+
+fun build_series(series: List<Int>): Sequence<List<Int>> {
+    return if (series.size == 8) sequenceOf(series) else {
+        val options = (0..7).minus(series).toList()
+        options.asSequence().flatMap { op -> build_series(series + op) }
+    }
+}
+
+fun check_distances(series: List<Int>, worker: BDDWorker): Int {
+    worker.run {
+        val r1 =
+                worker.and(
+                        worker.and(
+                                worker.imp(worker.variable(series[0]), worker.variable(series[1])),
+                                worker.imp(worker.variable(series[2]), worker.variable(series[3]))
+                        ),
+                        worker.and(
+                                worker.imp(worker.variable(series[4]), worker.variable(series[5])),
+                                worker.imp(worker.variable(series[6]), worker.variable(series[7]))
+                        )
+                )
+
+
+        val r2 =
+                worker.and(
+                        worker.and(
+                                worker.imp(worker.variable(series[0]), worker.variable(series[3])),
+                                worker.imp(worker.variable(series[1]), worker.variable(series[5]))
+                        ),
+                        worker.and(
+                                worker.imp(worker.variable(series[4]), worker.variable(series[6])),
+                                worker.imp(worker.variable(series[5]), worker.variable(series[7]))
+                        )
+                )
+
+
+        val r3 =
+                worker.and(
+                        worker.and(
+                                worker.imp(worker.variable(series[0]), worker.variable(series[4])),
+                                worker.imp(worker.variable(series[1]), worker.variable(series[5]))
+                        ),
+                        worker.and(
+                                worker.imp(worker.variable(series[2]), worker.variable(series[6])),
+                                worker.imp(worker.variable(series[3]), worker.variable(series[7]))
+                        )
+                )
+
+
+        return worker.and(worker.and(r1, r2), r3).size
+    }
 }
