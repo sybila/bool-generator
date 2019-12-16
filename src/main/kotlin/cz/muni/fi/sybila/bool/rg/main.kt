@@ -10,7 +10,7 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.paper
+    val network = Network.exampleUnspecified
 
     println("Species: ${network.species}")
 
@@ -20,32 +20,34 @@ fun main() {
     println("Solver ready!")
     val graph = ColouredGraph(network, solver)
 
-    for ((a,b) in params.strictRegulationParamSets()) {
-        println("Pair ($a, $b)")
-    }
-
 //    println("Regulators of M2N by M2C: ${params.regulationPairs(2, 3)}")
 //    println("Regulators of M2N by DNA: ${params.regulationPairs(1, 3)}")
 //    println("Regulators of M2N by P53: ${params.regulationPairs(0, 3)}")
 
     val classifier = Classifier(solver, states)
     val start = System.currentTimeMillis()
+    var count = 0
+    var card = 0
     solver.run {
         graph.findComponents { component ->
             println("Component: ${component.size}")
-            classifier.push(component)
+            count += 1
+            card += component.size
+            //classifier.push(component)
             /*component.forEach { (s, p) ->
                 println("State ${states.decode(s).toList()} for ${p.cardinality()} valuations")
             }*/
         }
     }
 
+    println("Count: $count Card: $card")
+
     val elapsed = (((System.currentTimeMillis() - start) / 1000.0) * 100).toInt() / 100.0
     println("Elapsed: ${elapsed}s")
-    println("Ops: ${solver.BDDops}")
+    //println("Ops: ${solver.bddOps}")
 
-    classifier.print()
-    val tree = DecisionTree(params.parameterCount, params.strictRegulationParamSets(), classifier.export(), solver)
+    //classifier.print()
+    /*val tree = DecisionTree(params.parameterCount, params.strictRegulationParamSets(), classifier.export(), solver)
     println("Tree size: ${tree.learn()}")
     solver.universe.printDot(solver.unit, "unit.dot")
     val classes = classifier.export()
@@ -54,7 +56,7 @@ fun main() {
         val set = classes[cls]!!
         solver.universe.printDot(set.s, "${cls.joinToString()}.dot")
         //println("Class $cls, tree: ${DecisionTree(params.parameterCount, params.strictRegulationParamSets(), classes.joinToClass(cls, solver), solver).learn()}")
-    }
+    }*/
     pool.shutdownNow()
 
 }

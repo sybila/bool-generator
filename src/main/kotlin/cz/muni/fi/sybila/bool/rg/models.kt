@@ -3,6 +3,27 @@ package cz.muni.fi.sybila.bool.rg
 @Suppress("LocalVariableName")
 object Network {
 
+    /**
+     * Small model with no parameter constraints for testing
+     */
+    val exampleUnspecified = network {
+        val p53 = specie("p53")
+        val dna = specie("DNA")
+        val m2c = specie("M2C")
+        val m2n = specie("M2N")
+
+        p53 regulates dna
+        p53 regulates m2c
+        p53 regulates m2n
+
+        m2c regulates m2n
+
+        m2n regulates p53
+
+        dna regulates dna
+        dna regulates m2n
+    }
+
     val paper = network {
         // order of species is super duper important because it matches the order in tables in the paper
         // so the BDDs are actually compatible...

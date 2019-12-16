@@ -1,5 +1,6 @@
 package cz.muni.fi.sybila.bool.rg
 
+import cz.muni.fi.sybila.bool.common.Solver
 import cz.muni.fi.sybila.bool.rg.bdd.BDDWorker
 
 /**
@@ -7,25 +8,25 @@ import cz.muni.fi.sybila.bool.rg.bdd.BDDWorker
  * and then provides basic universe operations for these sets.
  */
 class BDDSolver(
-        private val network: BooleanNetwork
-) {
+        network: BooleanNetwork
+) : Solver<BDDSet>() {
 
-    var BDDops = 0
+    var bddOps = 0
         private set
 
     private val params = BooleanParamEncoder(network)
     private val states = BooleanStateEncoder(network)
 
     private val threadUniverse: ThreadLocal<BDDWorker>// = ThreadLocal.withInitial { BDDWorker(params.parameterCount) }
-    val universe
+    val universe: BDDWorker
         get() = threadUniverse.get()
 
             /* Maps our parameter indices to BDD sets. */
     private val parameterVarNames: Array<BDDSet>
     private val parameterNotVarNames: Array<BDDSet>
 
-    val empty: BDDSet
-    val unit: BDDSet
+    override val empty: BDDSet
+    override val unit: BDDSet
 
     val variables: Int
     val fixedOne: List<Int> = emptyList()
@@ -118,50 +119,41 @@ class BDDSolver(
         println("[New] Unit BDD size: ${unit.nodeSize()} and cardinality ${unit.cardinality()}")
     }
 
-    inline fun List<BDDSet>.merge(crossinline action: (BDDSet, BDDSet) -> BDDSet): BDDSet {
-        var items = this
-        while (items.size > 1) {
-            items = items.mergePairs(action)
-        }
-        return items[0]
-    }
-
     // unsafe operations are needed to compute unit BDD
-    infix fun BDDSet.uAnd(that: BDDSet): BDDSet = universe.and(this, that)
-    infix fun BDDSet.uImp(that: BDDSet): BDDSet = universe.imp(this, that)
+    private infix fun BDDSet.uAnd(that: BDDSet): BDDSet = universe.and(this, that)
+    private infix fun BDDSet.uImp(that: BDDSet): BDDSet = universe.imp(this, that)
     infix fun BDDSet.uBiImp(that: BDDSet): BDDSet = universe.biImp(this, that)
     fun BDDSet.uNot(): BDDSet = universe.not(this)
 
     infix fun BDDSet.subset(that: BDDSet): Boolean {
-        BDDops += 1
+        bddOps += 1
         val implication = universe.imp(this, that)
         return universe.isUnit(implication)
     }
 
-    infix fun BDDSet.or(that: BDDSet): BDDSet {
-        BDDops += 1
+    override infix fun BDDSet.or(that: BDDSet): BDDSet {
+        bddOps += 1
         return universe.or(this, that)
     }
-    infix fun BDDSet.and(that: BDDSet): BDDSet {
-        BDDops += 1
+    override infix fun BDDSet.and(that: BDDSet): BDDSet {
+        bddOps += 1
         return this uAnd that
     }
 
-    fun BDDSet.not(): BDDSet {
-        BDDops += 1
-        return this.uNot() and unit
+    override fun not(it: BDDSet): BDDSet {
+        bddOps += 1
+        return it.uNot() and unit
     }
 
-    fun BDDSet.isEmpty(): Boolean = universe.isEmpty(this)
-    fun BDDSet.isNotEmpty(): Boolean = !universe.isEmpty(this)
+    override fun BDDSet.isEmpty(): Boolean = universe.isEmpty(this)
 
     fun BDDSet.cardinality(): Double = universe.satCount(this)
     fun BDDSet.nodeSize(): Int = universe.nodeCount(this)
-    fun BDDSet.printDot(name: String) = universe.printDot(this, name)
+    //fun BDDSet.printDot(name: String) = universe.printDot(this, name)
     //fun BDDSet.print() = universe.printSet(pointer)
     //fun memory() = universe.memoryUsage
 
-    fun transitionParams(from: State, dimension: Dimension): BDDSet {
+    override fun transitionParams(from: State, dimension: Dimension): BDDSet {
         val isActive = states.isActive(from, dimension)
         val parameterIndex = params.transitionParameter(from, dimension)
         // If we are active, we want to go down, so p = 0, otherwise we want to go up, so p = 1

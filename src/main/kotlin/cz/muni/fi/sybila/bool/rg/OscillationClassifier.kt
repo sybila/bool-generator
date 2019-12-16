@@ -36,7 +36,7 @@ class OscillationClassifier(
             val noOscillation = (alreadyFound and classWaveIntersection) // parameters which already have intersection
             notOscillating = notOscillating or noOscillation
             alreadyFound = alreadyFound or classWaveIntersection
-            newClass = newClass and classWaveIntersection.not()         // remove discovered parameters
+            newClass = newClass and not(classWaveIntersection)         // remove discovered parameters
             classWaveIntersection
         }
 
@@ -51,7 +51,7 @@ class OscillationClassifier(
             classes.add(clazz)
         }
 
-        val oscillating = notOscillating.not()
+        val oscillating = not(notOscillating)
 
         var continueParams = newClass
         // now union wave based on intersections

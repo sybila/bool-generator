@@ -1,152 +1,30 @@
 package cz.muni.fi.sybila.bool.rg
 
-import com.github.sybila.huctl.not
-import cz.muni.fi.sybila.bool.rg.map.DecreasingStateMap
+import cz.muni.fi.sybila.bool.common.ConcurrentArrayStateMap
+import cz.muni.fi.sybila.bool.common.ParametrisedGraph
+import cz.muni.fi.sybila.bool.common.StateSet
 import cz.muni.fi.sybila.bool.rg.map.DisjointSets
-import cz.muni.fi.sybila.bool.rg.parallel.ConcurrentStateQueue
 import cz.muni.fi.sybila.bool.rg.parallel.RepeatingConcurrentStateQueue
-import cz.muni.fi.sybila.bool.rg.parallel.StateQueue
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.ArrayList
-import kotlin.math.roundToInt
 
 class ColouredGraph(
         network: BooleanNetwork,
-        private val solver: BDDSolver,
+        override val solver: BDDSolver,
         private val trimEnabled: Boolean = false
-) {
+) : ParametrisedGraph<BDDSet> {
 
-    private val states = BooleanStateEncoder(network)
-    private val dimensions = states.dimensions
+    override val states = BooleanStateEncoder(network)
+    override val dimensions = states.dimensions
 
-    private val stateCount = states.stateCount
+    override val stateCount = states.stateCount
 
-    private fun newMap(): StateMap = StateMap(stateCount, solver)
-
-    private fun StateMap.reachForward(guard: StateMap? = null): StateMap {
-        val shouldUpdate = RepeatingConcurrentStateQueue(stateCount)
-        val result = newMap()
-        // init reach
-        for (s in 0 until stateCount) {
-            val c = this.getOrNull(s)
-            if (c != null) {
-                result.union(s, this.get(s))
-                shouldUpdate.set(s)
-            }
-        }
-        println("Start reach forward.")
-        // repeat
-        pool.parallel {
-            var state = shouldUpdate.next(0)
-            while (state > -1) {
-                while (state > -1) {
-                    // go through all neighbours
-                    for (d in 0 until dimensions) {
-                        solver.run {
-                            val target = states.flipValue(state, d)
-                            val edgeParams = solver.transitionParams(state, d)
-                            // bring colors from source state, bounded by guard
-                            val bound = if (guard == null) result.get(state) else {
-                                result.get(state) and guard.get(target)
-                            }
-                            // update target -> if changed, mark it as working
-                            val changed = result.union(target, edgeParams and bound)
-                            if (changed) {
-                                shouldUpdate.set(target)
-                            }
-                        }
-                    }
-                    state = shouldUpdate.next(state + 1)
-                }
-                state = shouldUpdate.next(0)
-            }
-        }
-
-        return result
+    override fun newMap(): StateSet<BDDSet> {
+        return ConcurrentArrayStateMap(stateCount, solver)
     }
 
-    private fun StateMap.isTheSame(that: StateMap): Boolean {
-        for (s in 0 until stateCount) {
-            if (!Arrays.equals(this.get(s), that.get(s))) {
-                return false
-            }
-        }
-        return true
-    }
-
-    private fun StateMap.reachBackward(guard: StateMap? = null): StateMap {
-        val shouldUpdate = RepeatingConcurrentStateQueue(stateCount)
-        val result = newMap()
-        // init reach
-        for (s in 0 until stateCount) {
-            val c = this.getOrNull(s)
-            if (c != null) {
-                result.union(s, this.get(s))
-                shouldUpdate.set(s)
-            }
-        }
-        println("Start reach backward.")
-        // repeat
-        pool.parallel {
-            var state = shouldUpdate.next(0)
-            while (state > -1) {
-                while (state > -1) {
-                    // go through all neighbours
-                    for (d in 0 until dimensions) {
-                        solver.run {
-                            val source = states.flipValue(state, d)
-                            val edgeParams = solver.transitionParams(source, d)
-                            // bring colors from source state, bounded by guard
-                            val bound = if (guard == null) result.get(state) else {
-                                result.get(state) and guard.get(source)
-                            }
-                            // update target -> if changed, mark it as working
-                            val changed = result.union(source, edgeParams and bound)
-                            if (changed) {
-                                shouldUpdate.set(source)
-                            }
-                        }
-                    }
-                    state = shouldUpdate.next(state + 1)
-                }
-                // double check - maybe someone added another thing
-                state = shouldUpdate.next(0)
-            }
-        }
-
-        return result
-    }
-
-    private fun StateMap.subtract(that: StateMap): StateMap {
-        val result = newMap()
-        (0 until stateCount).toList()
-                .map { s -> Triple(s, this.get(s), that.get(s)) }
-                .mapParallel { (s, a, b) ->
-                    (s to solver.run { a and b.not() }).takeIf { it.second.isNotEmpty() }
-                }
-                .filterNotNull()
-                .forEach { (s, p) ->
-                    result.union(s, p)
-                }
-        return result
-    }
-
-    private fun StateMap.invert(): StateMap {
-        val result = newMap()
-        (0 until stateCount).toList()
-                .map { s -> s to get(s) }
-                .mapParallel { (s, c) ->
-                    (s to solver.run { c.not() }).takeIf { it.second.isNotEmpty() }
-                }
-                .filterNotNull()
-                .forEach { (s, p) ->
-                    result.union(s, p)
-                }
-        return result
-    }
-
-    fun findComponents(onComponents: (StateMap) -> Unit) = solver.run {
+    /*override fun findComponents(onComponent: (StateSet<BDDSet>) -> Unit) = solver.run {
         // First, detect all sinks - this will prune A LOT of state space...
         val sinks = newMap()
         println("Detecting sinks!")
@@ -155,12 +33,12 @@ class ColouredGraph(
             val hasNext = (0 until dimensions)
                     .map { d -> solver.transitionParams(s, d) }
                     .merge { a, b -> a or b }
-            val isSink = hasNext.not()
+            val isSink = not(hasNext)
             if (isSink.isNotEmpty()) {
                 sinks.union(s, isSink)
                 val map = newMap()
                 map.union(s, isSink)
-                onComponents(map)
+                onComponent(map)
             }
         }
         val canReachSink = sinks.reachBackward()
@@ -183,7 +61,7 @@ class ColouredGraph(
             val terminal = allColours(reachableTerminalComponents).not()
 
             if (terminal.isNotEmpty()) {
-                onComponents(currentComponent.restrict(terminal))
+                onComponent(currentComponent.restrict(terminal))
             }
 
             if (reachableTerminalComponents.size > 0) {
@@ -197,7 +75,7 @@ class ColouredGraph(
                 workQueue.add(unreachableComponents)
             }
         }
-    }
+    }*/
 
     /*private fun StateMap.printFull() {
         this.forEach { (s, p) ->
@@ -248,45 +126,7 @@ class ColouredGraph(
         return trimmed.toStateMap()
     }*/
 
-    private fun StateMap.restrict(colours: BDDSet): StateMap {
-        val result = newMap()
-        (0 until stateCount).toList()
-                .mapNotNull { s -> getOrNull(s)?.let { s to it } }
-                .mapParallel { (s, c) ->
-                    s to solver.run { c and colours }
-                }
-                .forEach { (s, p) ->
-                    result.union(s, p)
-                }
-        return result
-    }
-
-    private fun allColours(map: StateMap): BDDSet = solver.run {
-        val list = (0 until stateCount)
-                .mapNotNull { map.getOrNull(it) }
-        return if (list.isEmpty()) empty else {
-            list.merge { a, b -> a or b }
-        }
-    }
-
-    private fun findPivots(map: StateMap): StateMap = solver.run {
-        val result = newMap()
-        var toCover = allColours(map)
-        var remaining = (0 until stateCount)
-                .mapNotNull { s -> map.getOrNull(s)?.let { s to (it) } }
-        while (toCover.isNotEmpty()) {
-            // there must be a gain in the first element of remaining because we remove all empty elements
-            val (s, gain) = remaining.first().let { (s, p) -> s to (p and toCover) }
-            toCover = toCover and gain.not()
-            result.union(s, gain)
-            remaining = remaining.mapParallel { (s, p) ->
-                (s to (p and toCover)).takeIf { it.second.isNotEmpty() }
-            }.filterNotNull()
-        }
-        result
-    }
-
-    fun dfs() = solver.run {
+    /*fun dfs() = solver.run {
         /*val reallyDead = newMap()
 
         val expectedTotal = unit.cardinality() * stateCount
@@ -346,7 +186,7 @@ class ColouredGraph(
         val stack = ArrayList<StackEntry>()
         for (root in 0 until stateCount) {
 
-            val notVisited = visited.get(root).not()
+            val notVisited = not(visited.get(root))
             if (notVisited.isEmpty()) continue
             stack.add(StackEntry(root, notVisited, dimensions))
             visited.union(root, notVisited)
@@ -361,7 +201,7 @@ class ColouredGraph(
                     val d = top.next()
                     val t = states.flipValue(s, d)
                     val edgeP = solver.transitionParams(s, d)
-                    val newInT = sP and edgeP and visited.get(t).not()
+                    val newInT = sP and edgeP and not(visited.get(t))
                     if (newInT.isNotEmpty()) {
                         visited.union(t, newInT)
                         toDo -= newInT.cardinality()
@@ -483,6 +323,6 @@ class ColouredGraph(
         operator fun component1(): Int = s
         operator fun component2(): BDDSet = sP
 
-    }
+    }*/
 
 }

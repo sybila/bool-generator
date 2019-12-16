@@ -18,6 +18,15 @@ class Lattice(
         val cube: ByteArray
 ) {
 
+    constructor(values: String) : this(values.map {
+        when (it) {
+            '1' -> ONE
+            '0' -> ZERO
+            '-' -> ANY
+            else -> error("Unexpected character $it")
+        }
+    }.toByteArray())
+
     /**
      * Create a full lattice (no restrictions)
      */
@@ -43,7 +52,7 @@ class Lattice(
     fun supersetOf(that: Lattice): Boolean {
         for (i in cube.indices) {
             // if this cube is set to fixed value, the other cube has to be set to the same value
-            if (this.cube[i] == ONE || this.cube[i] == ZERO) {
+            if (this.cube[i].isExact()) {
                 if (this.cube[i] != that.cube[i]) return false
             }
             // if this cube is unset, we don't care about the value in the other cube
@@ -52,11 +61,39 @@ class Lattice(
     }
 
     /**
+     * Create a list of lattices representing the complement of this lattice.
+     */
+    fun invert(): LatticeSet {
+        // For every determined variable of the lattice, create a copy with inverted value:
+        val result = HashSet<Lattice>()
+        for (i in cube.indices) {
+            if (this.cube[i].isExact()) {
+                result.add(Lattice(cube.size).also { it.cube[i] = this.cube[i].invert() })
+            }
+        }
+        return result
+    }
+
+    fun subtract(that: Lattice): LatticeSet {
+        val result = HashSet<Lattice>()
+        for (i in this.cube.indices) {
+            if (that.cube[i] == ANY || that.cube[i] == this.cube[i]) {
+                continue    // there is a "clean cut" - this dimension is completely erased
+            } else if (this.cube[i].isExact() && that.cube[i].isExact() && this.cube[i] != that.cube[i]) {
+                return setOf(this)  // these lattices are completely separate - nothing is subtracted
+            } else {
+                result.add(Lattice(cube.clone().also { it[i] = that.cube[i].invert() }))
+            }
+        }
+        return result
+    }
+
+    /**
      * If possible, union the two lattices. Union is possible if one of the lattices is
      * a superset or if the lattices match on all values except for one (in which case this value
      * comes back to ANY).
      */
-    fun tryUnion(that: Lattice): Lattice? {
+    infix fun tryUnion(that: Lattice): Lattice? {
         var thisIsSuperset = true
         var thatIsSuperset = true
         var unionAt = VAR_UNKNOWN
@@ -99,8 +136,10 @@ class Lattice(
         return true
     }
 
+    private val hash = cube.contentHashCode()
+
     override fun hashCode(): Int {
-        return cube.contentHashCode()
+        return hash
     }
 
     override fun toString(): String {
@@ -118,6 +157,11 @@ class Lattice(
 }
 
 private fun Byte.isExact(): Boolean = this == ONE || this == ZERO
+
+// Invert (negate) value of an EXACT byte
+private fun Byte.invert(): Byte {
+    return if (this == ONE) ZERO else ONE
+}
 
 private infix fun Byte.intersect(that: Byte): Byte {
     if (this == that) return this

@@ -55,7 +55,7 @@ class BooleanNetwork(
     )
 
     enum class Effect {
-        ACTIVATION, INHIBITION
+        ACTIVATION, INHIBITION, ANY
     }
 
 }

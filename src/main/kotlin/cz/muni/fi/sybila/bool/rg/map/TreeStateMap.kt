@@ -66,7 +66,7 @@ class TreeStateMap(
             return if (current == null) {
                 leaf.data[key] = value
                 true
-            } else if ((value and current.not()).isNotEmpty()) {
+            } else if ((value and not(current)).isNotEmpty()) {
                 leaf.data[key] = current or value
                 true
             } else {

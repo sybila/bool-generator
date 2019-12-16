@@ -1,10 +1,10 @@
-package cz.muni.fi.sybila.bool.lattice
+package cz.muni.fi.sybila.bool.common
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReferenceArray
 
-class ConcurrentArrayStateMap(
-        val capacity: Int, private val solver: LatticeSolver
+class ConcurrentArrayStateMap<T>(
+        val capacity: Int, private val solver: Solver<T>
 ) {
 
     private val sizeAtomic = AtomicInteger(0)
@@ -12,16 +12,16 @@ class ConcurrentArrayStateMap(
     val size: Int
         get() = sizeAtomic.get()
 
-    private val data = AtomicReferenceArray<LatticeSet?>(capacity)
+    private val data = AtomicReferenceArray<T?>(capacity)
 
-    fun getOrNull(state: Int): LatticeSet? = data[state]
+    fun getOrNull(state: Int): T? = data[state]
 
-    fun get(state: Int): LatticeSet = data[state] ?: solver.empty
+    fun get(state: Int): T = data[state] ?: solver.empty
 
-    fun union(state: Int, value: LatticeSet): Boolean {
+    fun union(state: Int, value: T): Boolean {
         solver.run {
             if (value.isEmpty()) return false
-            var beforeUpdate: LatticeSet?
+            var beforeUpdate: T?
             do {
                 beforeUpdate = data[state]
                 val current = beforeUpdate ?: empty

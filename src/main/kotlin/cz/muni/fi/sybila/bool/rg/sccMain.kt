@@ -11,11 +11,11 @@ fun main() {
     println("Solver ready!")
     val graph = ColouredGraph(network, solver)
 
-    val elapsed = measureTimeMillis {
+    /*val elapsed = measureTimeMillis {
         graph.dfs()
     }
 
-    println("Dfs time: $elapsed")
+    println("Dfs time: $elapsed")*/
 
     pool.shutdown()
 }

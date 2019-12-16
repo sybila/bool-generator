@@ -131,7 +131,7 @@ class ConcurrentStateMap(
             do {
                 val current = leaf.data.get(key)
                 val update = if (current != null) (current or value) else value
-                if (current != null && (current.not() and update).isEmpty()) {
+                if (current != null && (not(current) and update).isEmpty()) {
                     return false
                 }
             } while (!leaf.data.compareAndSet(key, current, update))

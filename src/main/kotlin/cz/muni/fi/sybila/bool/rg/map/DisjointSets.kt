@@ -46,7 +46,7 @@ class DisjointSets(
         findRoots(state, unit, roots)
         return roots
                 // reduce to roots which are not dead
-                .map { (k, v) -> (v.toBDDSet() and isDead[k].not()) }
+                .map { (k, v) -> (v.toBDDSet() and not(isDead[k])) }
                 // union them all
                 .fold(empty) { a, b -> a or b }
     }
@@ -143,7 +143,7 @@ class DisjointSets(
         val target = this@moveUp
         if (from !in target) return@run
         val moveUp = target.getValue(from).toBDDSet() and params
-        target[from] = (target.getValue(from).toBDDSet() and moveUp.not()).toBDD()
+        target[from] = (target.getValue(from).toBDDSet() and not(moveUp)).toBDD()
         target[to] = ((target[to]?.toBDDSet() ?: empty) or moveUp).toBDD()
     }
 
@@ -151,7 +151,7 @@ class DisjointSets(
     private fun Pointer.moveUp(params: BDDSet, from: Pointer) = solver.run {
         val target = this@moveUp
         // first - remove all parameters that will be moving up
-        val pNot = params.not()
+        val pNot = not(params)
         for ((s, p) in target) {
             target[s] = (p.toBDDSet() and pNot).toBDD()
         }

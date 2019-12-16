@@ -16,11 +16,23 @@ class NetworkBuilder {
     infix fun String.activates(that: String) = activation(this, that)
     infix fun String.maybeInhibits(that: String) = inhibition(this, that, false)
     infix fun String.inhibits(that: String) = inhibition(this, that)
+    infix fun String.regulates(that: String) = anyRegulation(this, that)
 
     infix fun String.given(regulators: List<String>) {
         // TODO: Safety checks
         val target = species.indexOf(this)
         explicit.add(target to regulators.map { species.indexOf(it) })
+    }
+
+    private fun anyRegulation(regulator: String, target: String) {
+        val regulatorIndex = species.indexOf(regulator)
+        if (regulatorIndex < 0) error("Unknown regulator $regulator")
+        val targetIndex = species.indexOf(target)
+        if (targetIndex < 0) error("Unknown target $target")
+        regulations.add(BooleanNetwork.Regulation(
+                regulator = regulatorIndex, target = targetIndex,
+                observable = false, effect = BooleanNetwork.Effect.ANY
+        ))
     }
 
     private fun activation(regulator: String, target: String, observable: Boolean = true) {

@@ -45,7 +45,7 @@ class Classifier(
                 val p = component.get(s)
                 if (p.isNotEmpty()) {
                     val hasSuccessor = (0 until states.dimensions).fold(empty) { a, d -> a or transitionParams(s, d) }
-                    val isSink = p and hasSuccessor.not()
+                    val isSink = p and not(hasSuccessor)
                     val isNotSink = p and hasSuccessor
                     if (isSink.isNotEmpty()) {
                         push("sink", isSink)
@@ -67,7 +67,7 @@ class Classifier(
                                 .map { s -> s to (componentWithoutSinks.get(s) and remainingParams) }
                                 .first { it.second.isNotEmpty() }
                         this.union(pivotState, pivotParams)
-                        remainingParams = remainingParams and pivotParams.not()
+                        remainingParams = remainingParams and not(pivotParams)
                     }
                 }
 
@@ -95,7 +95,7 @@ class Classifier(
                     currentLevel = reachable
                 }
 
-                val oscillates = notSinkParams and disorder.not()
+                val oscillates = notSinkParams and not(disorder)
 
                 if (disorder.isNotEmpty()) {
                     push("disorder", disorder)
@@ -144,7 +144,7 @@ class Classifier(
                     val shouldMoveUp = classes[c]!!.s and params
                     if (shouldMoveUp.isNotEmpty()) {
                         val largerClass = (c + clazz).sorted()
-                        classes[c] = BSet(classes[c]!!.s and shouldMoveUp.not())
+                        classes[c] = BSet(classes[c]!!.s and not(shouldMoveUp))
                         if (classes[c]?.s?.isEmpty() == true) classes.remove(c)
                         classes[largerClass] = BSet((classes[largerClass]?.s ?: empty) or shouldMoveUp)
                     }

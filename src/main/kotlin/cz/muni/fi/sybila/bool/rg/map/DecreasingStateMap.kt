@@ -36,7 +36,7 @@ class DecreasingStateMap(
                 true
             } else {
                 // if current is strict superset of update, set value and return true
-                if ((current and update.not()).isEmpty()) false else {
+                if ((current and not(update)).isEmpty()) false else {
                     data[state] = update
                     true
                 }
