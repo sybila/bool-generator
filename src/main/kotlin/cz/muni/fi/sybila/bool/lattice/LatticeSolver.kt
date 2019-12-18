@@ -60,11 +60,15 @@ class LatticeSolver(
     @Suppress("EXTENSION_SHADOWED_BY_MEMBER")
     override fun LatticeSet.isEmpty(): Boolean = this.isEmpty()
 
+    override fun resetStats() {
+        simplificationThreshold.set(4)
+    }
+
     private fun LatticeSet.simplify(): LatticeSet {
         if (this.size < 2 * simplificationThreshold.get()) return this
         else {
             val simplified = HashSet<Lattice>()
-            for (lattice in this) {
+            for (lattice in this.sortedByDescending { it.cardinality() }) {
                 if (setOf(lattice) subsetEq simplified) continue
                 var unionWith: Lattice? = null
                 for (candidate in simplified) {
@@ -80,10 +84,41 @@ class LatticeSolver(
                     simplified.add(lattice)
                 }
             }
+            // insert a lattice into a lattice set, possibly merging it with existing lattice in the set
+            /*fun push(set: MutableSet<Lattice>, lattice: Lattice) {
+                var unionWith: Lattice? = null
+                for (candidate in set) {
+                    val union = lattice tryUnion candidate
+                    if (union != null) {
+                        unionWith = candidate; break
+                    }
+                }
+                if (unionWith != null) {
+                    set.remove(unionWith)
+                    set.add((lattice tryUnion unionWith)!!)
+                } else {
+                    set.add(lattice)
+                }
+            }
+            for (lattice in this.sortedByDescending { it.cardinality() }) {
+                // First, find all intersection lattices.
+                val intersection = setOf(lattice) intersect simplified
+                // If the intersection is empty, just add the lattice
+                if (intersection.isEmpty()) {
+                    push(simplified, lattice)
+                // Otherwise, we are going to add only the remaining necessary lattices that are not present already
+                } else {
+                    var toInsert = setOf(lattice)
+                    for (intersectionLattice in intersection) {
+                        toInsert = toInsert.flatMapTo(HashSet()) { it.subtract(intersectionLattice) }
+                    }
+                    toInsert.forEach { push(simplified, it) }
+                }
+            }*/
             //println("Simplified ${this.size} to ${simplified.size}")
             if (simplified.size > simplificationThreshold.get()) {
                 simplificationThreshold.set(simplified.size)
-                println("New threshold: ${simplified.size}")
+                println("New threshold: ${simplified.size} for $simplified")
             }
             return simplified
         }
@@ -94,8 +129,7 @@ class LatticeSolver(
         val parameterIndex = params.transitionParameter(from, dimension)
         // If we are active, we want to go down, so p = 0, otherwise we want to go up, so p = 1
         val lattice = Lattice(params.parameterCount)
-        lattice.cube[parameterIndex] = if (!isActive) 1 else 0
-        return setOf(lattice)
+        return setOf(lattice.copyWithUpdate(parameterIndex, if (!isActive) ONE else ZERO))
     }
 
 }

@@ -1,8 +1,8 @@
 package cz.muni.fi.sybila.bool.lattice
 
-private const val ONE: Byte = 1
-private const val ZERO: Byte = 2
-private const val ANY: Byte = 0
+const val ONE: Byte = 1
+const val ZERO: Byte = 2
+const val ANY: Byte = 0
 
 private const val FAIL: Byte = 3
 
@@ -15,8 +15,11 @@ private const val UNION_FAIL = -2
  * parameter set). By setting a specific variable to a fixed value, you restrict the set.
  */
 class Lattice(
-        val cube: ByteArray
+        private val cube: ByteArray
 ) {
+
+
+    private val hash = cube.contentHashCode()
 
     constructor(values: String) : this(values.map {
         when (it) {
@@ -31,6 +34,14 @@ class Lattice(
      * Create a full lattice (no restrictions)
      */
     constructor(numVars: Int) : this(ByteArray(numVars))
+
+    /**
+     * Create a copy of this lattice with value at [index] substituted for [newValue]. New value
+     * must be one of [ONE], [ZERO], [ANY]
+     */
+    fun copyWithUpdate(index: Int, newValue: Byte): Lattice {
+        return Lattice(this.cube.clone().also { it[index] = newValue })
+    }
 
     /**
      * Intersect the two lattices. If the result is empty, return null.
@@ -49,7 +60,7 @@ class Lattice(
     /**
      * Return true if this lattice is a strict superset of the other lattice.
      */
-    fun supersetOf(that: Lattice): Boolean {
+    infix fun supersetOf(that: Lattice): Boolean {
         for (i in cube.indices) {
             // if this cube is set to fixed value, the other cube has to be set to the same value
             if (this.cube[i].isExact()) {
@@ -60,15 +71,18 @@ class Lattice(
         return true
     }
 
+    fun cardinality(): Int {
+        return cube.count { it == ANY }
+    }
+
     /**
      * Create a list of lattices representing the complement of this lattice.
      */
     fun invert(): LatticeSet {
-        // For every determined variable of the lattice, create a copy with inverted value:
         val result = HashSet<Lattice>()
         for (i in cube.indices) {
             if (this.cube[i].isExact()) {
-                result.add(Lattice(cube.size).also { it.cube[i] = this.cube[i].invert() })
+                result.add(Lattice(cube.size).copyWithUpdate(i, this.cube[i].invert()))
             }
         }
         return result
@@ -131,12 +145,11 @@ class Lattice(
 
         other as Lattice
 
+        if (this.hash != other.hash) return false
         if (!cube.contentEquals(other.cube)) return false
 
         return true
     }
-
-    private val hash = cube.contentHashCode()
 
     override fun hashCode(): Int {
         return hash

@@ -21,6 +21,8 @@ abstract class Solver<T> {
 
     open infix fun T.subsetEq(that: T): Boolean = (this and not(that)).isEmpty()
 
+    open fun resetStats() {}
+
     /**
      * Merge items in the list pair by pair. Essentially a fancy fold, but this reduction strategy
      * tends to be more efficient for parameter sets.

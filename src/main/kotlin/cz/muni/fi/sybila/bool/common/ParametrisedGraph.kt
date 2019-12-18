@@ -28,11 +28,12 @@ interface ParametrisedGraph<P: Any> {
         // initially, all states need to be considered
         workQueue.add(newMap().apply {
             for (s in 0 until stateCount) {
-                println("Added: ${union(s, solver.unit)}")
+                union(s, solver.unit)
             }
         })
         // run until all state sets are exhausted
         while (workQueue.isNotEmpty()) {
+            solver.resetStats()
             val universe = workQueue.removeAt(workQueue.lastIndex)
             println("Universe state count: ${universe.size} Remaining work queue: ${workQueue.size}")
             val pivots = findPivots(universe)
