@@ -65,7 +65,7 @@ class LatticeSolver(
     }
 
     private fun LatticeSet.simplify(): LatticeSet {
-        if (this.size < 2 * simplificationThreshold.get()) return this
+        if (false && this.size < 2 * simplificationThreshold.get()) return this
         else {
             val simplified = HashSet<Lattice>()
             for (lattice in this.sortedByDescending { it.cardinality() }) {
@@ -125,11 +125,64 @@ class LatticeSolver(
     }
 
     override fun transitionParams(from: Int, dimension: Int): LatticeSet {
-        val isActive = states.isActive(from, dimension)
-        val parameterIndex = params.transitionParameter(from, dimension)
-        // If we are active, we want to go down, so p = 0, otherwise we want to go up, so p = 1
-        val lattice = Lattice(params.parameterCount)
-        return setOf(lattice.copyWithUpdate(parameterIndex, if (!isActive) ONE else ZERO))
+        val targetParameterValue = if (!states.isActive(from, dimension)) {
+            // The value of [dimension] is going from 0 to 1 -> transition is increasing.
+            ONE
+        } else {
+            // The value of [dimension] is going from 1 to 0 -> transition is decreasing.
+            ZERO
+        }
+
+        val latticeTemplate = ByteArray(params.parameterCount)
+        // In the lattice template, we want to set parameters to target value in cases
+        // where we can infer monotonicity. Specifically, we start with x = current state and enumerate
+        // all y such that:
+        // If regulation y -> x is activating, then:
+        // f(x) = 0 and y < x => f(y) = 0
+        // f(x) = 1 and y > x => f(y) = 1
+        // If regulation y -> x is inhibiting, then:
+        // f(x) = 0 and y > x => f(y) = 0
+        // f(x) = 1 and y < x => f(y) = 1
+        val context = params.descendingContexts[dimension]
+        // Notice that we can just manipulate transition parameter index directly, because the parameter id
+        // is just a "compressed" state where all non-regulators are removed. So when we increase/decrease
+        // specific bit values, it's like updating [from] state and recomputing the parameter index.
+        fun buildLattice(parameterIndex: Int) {
+            // Only continue if the value in the lattice hasn't been updated before
+            if (latticeTemplate[parameterIndex] != targetParameterValue) {
+                latticeTemplate[parameterIndex] = targetParameterValue
+                for (regulatorIndex in context.indices) {   // try increasing different regulators
+                    val regulation = context[regulatorIndex]
+                    if (
+                            (regulation.effect == BooleanNetwork.Effect.ACTIVATION && targetParameterValue == ONE) ||
+                            (regulation.effect == BooleanNetwork.Effect.INHIBITION && targetParameterValue == ZERO)
+                    ) {
+                        // We should increase the value in the parameter index if possible!
+                        val increasedParameter = parameterIndex.or(1.shl(regulatorIndex))
+                        if (increasedParameter != parameterIndex) { // if the update did something
+                            buildLattice(increasedParameter)
+                        }
+                    }
+
+                    if (
+                            (regulation.effect == BooleanNetwork.Effect.ACTIVATION && targetParameterValue == ZERO) ||
+                            (regulation.effect == BooleanNetwork.Effect.INHIBITION && targetParameterValue == ONE)
+                    ) {
+                        // We should decrease the value in the parameter index if possible!
+                        val decreasedParameter = parameterIndex.and(1.shl(regulatorIndex).inv())
+                        if (decreasedParameter != parameterIndex) { // if the update did something
+                            buildLattice(decreasedParameter)
+                        }
+                    }
+                }
+                //if (regulatorIndex >= context.size) return  // only go through valid regulations
+
+            }
+        }
+        buildLattice(params.transitionParameter(from, dimension))
+
+        return setOf(Lattice(latticeTemplate))
     }
+
 
 }

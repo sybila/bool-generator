@@ -24,6 +24,16 @@ object Network {
         dna regulates m2n
     }
 
+    val smallTest = network {
+        val A = specie("A")
+        val B = specie("B")
+
+        A maybeInhibits B
+        A maybeActivates A
+
+        B maybeActivates A
+    }
+
     val paper = network {
         // order of species is super duper important because it matches the order in tables in the paper
         // so the BDDs are actually compatible...
@@ -32,16 +42,16 @@ object Network {
         val m2c = specie("M2C")
         val m2n = specie("M2N")
 
-        p53 inhibits dna
-        p53 activates m2c
-        p53 inhibits m2n
+        p53 maybeInhibits  dna
+        p53 maybeActivates  m2c
+        p53 maybeInhibits  m2n
 
-        m2c activates m2n
+        m2c maybeActivates  m2n
 
-        m2n inhibits p53
+        m2n maybeInhibits  p53
 
         dna maybeActivates dna
-        dna inhibits m2n
+        dna maybeInhibits  m2n
     }
 
     // #P = 54, |P| = 2.07e5, |S| = 512

@@ -164,4 +164,7 @@ class BDDSolver(
     fun variable(v: Int) = parameterVarNames[v]
     fun variableNot(v: Int) = parameterNotVarNames[v]
 
+    override fun BDDSet.prettyPrint(): String {
+        return threadUniverse.get().dotString(this)
+    }
 }

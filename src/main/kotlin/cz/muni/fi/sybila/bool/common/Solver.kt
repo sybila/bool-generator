@@ -22,6 +22,7 @@ abstract class Solver<T> {
     open infix fun T.subsetEq(that: T): Boolean = (this and not(that)).isEmpty()
 
     open fun resetStats() {}
+    open fun T.prettyPrint(): String { return this.toString() }
 
     /**
      * Merge items in the list pair by pair. Essentially a fancy fold, but this reduction strategy

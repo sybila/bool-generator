@@ -5,7 +5,7 @@ import cz.muni.fi.sybila.bool.rg.pool
 
 fun main(args: Array<String>) {
 
-    val model = Network.paper
+    val model = Network.smallTest
 
     val solver = LatticeSolver(model)
     val graph = LatticeGraph(model, solver)
@@ -15,6 +15,13 @@ fun main(args: Array<String>) {
     var card = 0
     graph.findComponents { component ->
         println("Component: ${component.size}")
+        for (s in 0 until graph.stateCount) {
+            solver.run {
+                if (component.get(s).isNotEmpty()) {
+                    println("Component state: $s -> ${component.get(s).prettyPrint()}")
+                }
+            }
+        }
         count += 1
         card += component.size
     }

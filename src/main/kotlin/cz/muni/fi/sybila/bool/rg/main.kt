@@ -10,7 +10,7 @@ fun main() {
                     BooleanNetwork.Regulation(1, 1, false, ACTIVATION)
             )
     )*/
-    val network = Network.exampleUnspecified
+    val network = Network.smallTest
 
     println("Species: ${network.species}")
 
@@ -31,6 +31,13 @@ fun main() {
     solver.run {
         graph.findComponents { component ->
             println("Component: ${component.size}")
+            for (s in 0 until graph.stateCount) {
+                solver.run {
+                    if (component.get(s).isNotEmpty()) {
+                        println("Component state: $s -> ${component.get(s).prettyPrint()}")
+                    }
+                }
+            }
             count += 1
             card += component.size
             //classifier.push(component)

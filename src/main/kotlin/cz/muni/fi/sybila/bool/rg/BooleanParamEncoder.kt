@@ -26,9 +26,9 @@ class BooleanParamEncoder(
         private val network: BooleanNetwork
 ) {
 
-    private val descendingContexts = Array(network.dimensions) { specie ->
+    val descendingContexts = Array(network.dimensions) { specie ->
         network.regulatoryContext(specie).sortedByDescending { it.regulator }
-    }
+    }.also { contexts -> contexts.forEach { println("Context size: ${it.size}") } }
 
     /**
      * Size of the logical table for each specie.

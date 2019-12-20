@@ -67,6 +67,39 @@ class BDDWorker(
     fun satCount(a: BDD): Double = cardinality(a)
     fun nodeCount(a: BDD): Int = (a.size - 2) / 3
 
+    fun dotString(a: BDD): String {
+        val done = IntArray(a.size)
+        return StringBuilder().run {
+            push(a.root())
+            append("""
+                digraph G {
+	                init__ [label="", style=invis, height=0, width=0];
+	                init__ -> ${a.root()};
+            """.trimIndent())
+            do {
+                val node = peek()
+                pop()
+                if (done[node] == 1 || node.isTerminal()) continue
+                append("$node[label=\"v${a.v(node)+1}\"];\n")
+                if (a.left(node) != 0) {
+                    append("$node-> ${a.left(node)} [style=dotted];\n")
+                    push(a.left(node))
+                }
+                if (a.right(node) != 0) {
+                    append("$node-> ${a.right(node)} [style=filled];\n")
+                    push(a.right(node))
+                }
+                done[node] = 1
+            } while (stackNotEmpty)
+            append("""
+                0 [shape=box, label="0", style=filled, shape=box, height=0.3, width=0.3];
+                1 [shape=box, label="1", style=filled, shape=box, height=0.3, width=0.3];
+
+                }
+            """.trimIndent())
+        }.toString()
+    }
+
     fun printDot(a: BDD, filename: String) {
         val done = IntArray(a.size)
         File(filename).bufferedWriter().use {

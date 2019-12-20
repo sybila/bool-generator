@@ -41,6 +41,11 @@ interface ParametrisedGraph<P: Any> {
 
             // Find universe of terminal components reachable from pivot (and the component containing pivot)
             val forward = pivots.reachForward(universe)
+            println("Pivot: ${(0 until stateCount).filter { pivots.get(it).isNotEmpty() }}")
+            for (state in 0 until stateCount) {
+                //println("State $state has ${forward.get(state).prettyPrint()}")
+            }
+            //System.exit(0)
             val currentComponent = pivots.reachBackward(forward)
             val reachableTerminalComponents = forward.subtract(currentComponent)
 
@@ -169,9 +174,11 @@ interface ParametrisedGraph<P: Any> {
                                 result.get(state) and universe.get(target)
                             }
                             // update target -> if changed, mark it as working
+                            val previous = result.get(target)
                             val changed = result.union(target, edgeParams and bound)
                             if (changed) {
                                 shouldUpdate.set(target)
+                                //println("Value of $target updated to ${result.get(target).prettyPrint()} based on $state")
                             }
                         }
                     }
